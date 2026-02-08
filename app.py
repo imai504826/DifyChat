@@ -9,78 +9,87 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- デザインCSS（空白を徹底的に殺す設定） ---
+    # --- デザインCSS ---
     st.markdown("""
         <style>
-        /* ページ全体の余白調整 */
+        /* ページ全体の余白と背景 */
+        .stApp {
+            background-color: #f9f9fb;
+        }
+        
+        /* メインコンテナの余白調整（ヘッダーを下げる） */
         .block-container {
-            padding-top: 1rem !important;
-            padding-bottom: 3rem !important;
+            padding-top: 4rem !important; /* ここでヘッダーの高さを調整 */
+            padding-bottom: 6rem !important;
             max-width: 750px;
         }
 
-        /* 画面背景 */
-        .stApp { background-color: #f9f9fb; }
-        
-        /* タイトルエリアのコンテナ（白いカード風） */
+        /* ヘッダーカード：謎の空白エリアが出ないよう設計 */
         .custom-header-card {
             background-color: #ffffff;
-            padding: 25px 30px;
+            padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             border: 1px solid #eaeaea;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         
-        /* ロゴと事務所名の並び */
         .header-flex {
             display: flex;
             align-items: center;
         }
         
         .logo-box {
-            width: 55px; height: 55px;
+            width: 60px; height: 60px;
             background-color: #061e3d;
             border-radius: 50%;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             margin-right: 20px; flex-shrink: 0;
         }
-        .logo-h { color: #ffffff; font-size: 26px; font-weight: 900; font-family: 'Georgia', serif; line-height: 1; }
-        .logo-imai { font-size: 8px; font-weight: bold; color: #ffffff; margin-top: -2px; }
+        .logo-h { color: #ffffff; font-size: 28px; font-weight: 900; font-family: 'Georgia', serif; line-height: 1; }
+        .logo-imai { font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px; }
 
         .header-title { color: #061e3d; font-size: 22px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 13px; margin-top: 4px; }
         
-        /* 重要事項（免責）のデザイン */
+        /* 重要事項（免責） */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
             padding: 15px;
-            margin: 10px 0 20px 0;
+            margin: 15px 0;
             border-radius: 4px;
         }
         .disclaimer-text {
             color: #444444; font-size: 11px; line-height: 1.6; margin: 0;
         }
 
-        /* 履歴部分の白い背景（カード感を出す） */
+        /* 画面最下部に固定するフッター */
+        .footer-fixed {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            color: #888888;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 11px;
+            border-top: 1px solid #eaeaea;
+            z-index: 999;
+        }
+
+        /* チャットメッセージの背景 */
         .stChatMessage {
             background-color: #ffffff !important;
             border: 1px solid #eaeaea !important;
-            border-radius: 10px !important;
-            margin-bottom: 15px !important;
-        }
-
-        /* フッター */
-        .custom-footer {
-            margin-top: 30px; color: #888888; text-align: center;
-            font-size: 10px; padding-bottom: 40px;
+            margin-bottom: 10px !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
-    # --- 重要事項（免責）表示関数 ---
+    # --- 重要事項（免責）関数 ---
     def display_disclaimer():
         st.markdown("""
             <div class="disclaimer-box">
@@ -92,8 +101,7 @@ if check_password():
             </div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダーエリアの描画 ---
-    # ここで直接描画することで、謎の空カードが発生するのを防ぎます
+    # --- ヘッダーの描画（位置を下げて表示） ---
     st.markdown("""
         <div class="custom-header-card">
             <div class="header-flex">
@@ -110,11 +118,11 @@ if check_password():
     with st.sidebar:
         logout()
 
-    # --- Dify 連携ロジック ---
+    # --- Dify 連携 ---
     try:
         D_KEY = st.secrets["DIFY_API_KEY"]
     except:
-        st.error("DIFY_API_KEYが設定されていません。")
+        st.error("APIキーが設定されていません。")
         st.stop()
 
     if "messages" not in st.session_state:
@@ -122,7 +130,7 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
-    # 履歴表示（ここでも免責を確実に出す）
+    # 履歴表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
@@ -143,15 +151,16 @@ if check_password():
                     json={"inputs": {}, "query": prompt, "response_mode": "blocking", "user": st.session_state.user_id},
                     timeout=60
                 )
-                response.raise_for_status()
                 answer = response.json().get("answer", "回答を取得できませんでした。")
-                
                 st.markdown(answer)
-                display_disclaimer() # ★ここで確実に出るようにしています
-                
+                display_disclaimer() # 必ずセットで表示
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             except Exception as e:
-                st.error(f"エラーが発生しました: {e}")
+                st.error(f"接続エラー: {e}")
 
-    # フッター
-    st.markdown('<div class="custom-footer">© 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</div>', unsafe_allow_html=True)
+    # --- フッター（最下部固定） ---
+    st.markdown("""
+        <div class="footer-fixed">
+            © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+        </div>
+    """, unsafe_allow_html=True)
