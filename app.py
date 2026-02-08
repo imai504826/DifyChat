@@ -9,38 +9,37 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: ヘッダー、入力欄、フッターを垂直に完璧に揃える ---
+    # --- CSS: 徹底したクリーンアップと整列 ---
     st.markdown("""
         <style>
-        /* アプリ全体の背景 */
+        /* 全体背景と基本設定 */
         .stApp { background-color: #f9f9fb; }
         
-        /* コンテンツ幅を 730px に統一 */
+        /* メインコンテンツ幅をヘッダー(730px)に厳密に合わせる */
         .block-container {
             max-width: 730px !important;
-            padding-top: 4rem !important;
-            padding-bottom: 180px !important;
+            padding-top: 3rem !important;
+            padding-bottom: 160px !important;
         }
 
-        /* --- 下部固定ユニットのデザイン --- */
+        /* --- 下部固定エリアの再構築（無駄な線を排除） --- */
 
-        /* 背面の白いプレート（ヘッダーと同じ幅で中央固定） */
-        .fixed-footer-base {
+        /* 1. 土台となる白い帯（境界線を1本のみに限定） */
+        .custom-footer-bg {
             position: fixed;
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
-            max-width: 730px; /* ヘッダーと完全一致 */
-            height: 150px;
+            max-width: 730px;
+            height: 140px;
             background-color: #ffffff;
-            border-top: 1px solid #eaeaea;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.03);
+            border-top: 1px solid #eaeaea; /* これ以外の枠線は不要 */
             z-index: 90;
-            pointer-events: none; /* 下の要素の邪魔をしない */
+            pointer-events: none;
         }
 
-        /* Streamlit標準の入力欄コンテナを調整 */
+        /* 2. 入力エリアの調整（標準の枠線や背景をリセット） */
         [data-testid="stChatFloatingInputContainer"] {
             background-color: transparent !important;
             border: none !important;
@@ -48,56 +47,68 @@ if check_password():
             transform: translateX(-50%) !important;
             width: 100% !important;
             max-width: 730px !important;
-            padding: 0 15px !important;
-            bottom: 65px !important; /* 免責事項の上に配置 */
+            bottom: 60px !important;
             z-index: 100 !important;
+            box-shadow: none !important;
         }
 
-        /* 入力ボックス内の装飾（無駄な線を消す） */
+        /* 入力ボックス内部：以前の赤い線や無駄な枠を完全に上書き */
         [data-testid="stChatInput"] {
-            border-radius: 10px !important;
             border: 1px solid #e0e0e0 !important;
+            border-radius: 8px !important;
             background-color: #fcfcfc !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02) !important;
         }
 
-        /* フッターテキストの配置 */
-        .footer-text-unit {
+        /* テキストエリア自体の枠線を消去（これが赤い枠の原因になりやすい） */
+        [data-testid="stChatInput"] textarea {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* 3. 免責事項・コピーライト */
+        .custom-footer-content {
             position: fixed;
-            bottom: 15px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
             max-width: 730px;
             text-align: center;
             z-index: 101;
+            font-family: sans-serif;
         }
 
-        .footer-red-text {
+        .footer-red-notice {
             color: #d93025;
             font-size: 11px;
             font-weight: 700;
             margin-bottom: 2px;
+            letter-spacing: 0.02em;
         }
-        .footer-copy-text {
+        .footer-copyright {
             color: #888888;
             font-size: 9px;
         }
 
-        /* サイドバーがある時の位置補正（Streamlit標準の挙動をサポート） */
-        @media (min-width: 992px) {
-            [data-testid="stSidebar"][aria-expanded="true"] ~ .main .fixed-footer-base,
-            [data-testid="stSidebar"][aria-expanded="true"] ~ .main .footer-text-unit {
-                margin-left: 0; /* 中央維持 */
-            }
+        /* --- サイドバー開閉時の微調整 --- */
+        /* サイドバーがある時でも、常にメインエリアの中央に吸い付くように設定 */
+        section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .custom-footer-bg,
+        section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .custom-footer-content {
+            /* Streamlitの標準挙動に合わせ自動計算されるため、特殊なleft指定を排除 */
+        }
+        
+        /* デバッグ用の赤い線を強制削除 */
+        div.stChatInputContainer {
+            border: none !important;
         }
         </style>
-        
-        <div class="fixed-footer-base"></div>
+        <div class="custom-footer-bg"></div>
         """, unsafe_allow_html=True)
 
     # --- ヘッダー（幅730px固定） ---
     st.markdown("""
-        <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 40px;">
+        <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 30px;">
             <div style="display: flex; align-items: center;">
                 <div style="width: 58px; height: 58px; background-color: #061e3d; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 20px; flex-shrink: 0;">
                     <span style="color: #ffffff; font-size: 26px; font-weight: 900; line-height: 1;">H</span>
@@ -119,11 +130,12 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
+    # メッセージ表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- チャット入力（標準機能を活かしつつ、CSSで中央固定） ---
+    # --- チャット入力 ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -148,14 +160,14 @@ if check_password():
                     status.update(label="❌ エラー", state="error")
                     st.error("システムエラーが発生しました。")
 
-    # --- 免責事項ユニット ---
+    # --- 下部コンテンツ ---
     st.markdown("""
-        <div class="footer-text-unit">
-            <div class="footer-red-text">
+        <div class="custom-footer-content">
+            <div class="footer-red-notice">
                 【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
             </div>
-            <div class="footer-copy-text">
-                © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+            <div class="footer-copyright">
+                © 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
             </div>
         </div>
     """, unsafe_allow_html=True)
