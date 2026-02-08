@@ -12,13 +12,13 @@ if check_password():
     # --- デザインCSS（配置の最適化） ---
     st.markdown("""
         <style>
-        /* 背景色 */
+        /* 背景色と基本フォント */
         .stApp { background-color: #f9f9fb; }
         
-        /* メインコンテナの余白（ヘッダーを下げる） */
+        /* メインコンテナの余白調整（ヘッダーを下げ、下部に十分な空きを作る） */
         .block-container {
-            padding-top: 5rem !important;
-            padding-bottom: 10rem !important; /* 入力欄と被らないよう下を空ける */
+            padding-top: 6rem !important;
+            padding-bottom: 12rem !important; 
             max-width: 750px;
         }
 
@@ -48,7 +48,7 @@ if check_password():
         .header-title { color: #061e3d; font-size: 24px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 14px; margin-top: 4px; }
         
-        /* 回答直後の重要事項ボックス */
+        /* チャット回答直後の重要事項ボックス */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
@@ -58,28 +58,37 @@ if check_password():
         }
         .disclaimer-text { color: #444444; font-size: 12px; line-height: 1.7; margin: 0; }
 
-        /* 画面最下部に「入力欄＋免責＋コピーライト」をまとめて固定するエリア */
+        /* 入力エリア（チャット入力欄）の背景調整 */
         .stChatInputContainer {
             background-color: #f9f9fb !important;
-            padding-bottom: 10px !important;
+            padding-bottom: 20px !important;
         }
 
-        /* フッター全体のデザイン調整 */
-        .fixed-footer-content {
-            text-align: center;
-            padding-top: 10px;
-            padding-bottom: 20px;
+        /* 画面最下部に固定するフッターのラッパー */
+        .footer-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
             width: 100%;
+            background-color: #f9f9fb; /* 背景になじませる */
+            text-align: center;
+            padding: 15px 0 25px 0;
+            z-index: 99;
+            border-top: 1px solid #eaeaea;
         }
+
         .footer-disclaimer {
-            color: #d93025;
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 5px;
+            color: #d93025; /* 視認性の高い警告色 */
+            font-size: 14px; /* 大きくして分かりやすく */
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding: 0 20px;
         }
+
         .footer-copyright {
             color: #888888;
-            font-size: 11px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -145,12 +154,11 @@ if check_password():
             except Exception as e:
                 st.error(f"接続エラー: {e}")
 
-    # --- フッター（入力欄の下に正確に配置） ---
-    # st.markdownを一工夫して、入力欄の下に自然に続くようにします
+    # --- 改良版：画面最下部に完全固定するフッター ---
     st.markdown("""
-        <div class="fixed-footer-content">
+        <div class="footer-wrapper">
             <div class="footer-disclaimer">
-                【免責事項】本AIの回答は法的助言ではありません。最終判断は専門家へ相談の上、自己責任で行ってください。
+                【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家に相談の上、自己責任で行ってください。
             </div>
             <div class="footer-copyright">
                 © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
