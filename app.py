@@ -9,87 +9,54 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: ミリ単位のズレと「奥の残像」を完全消去 ---
+    # --- CSS: シンプルな構造に整理 ---
     st.markdown("""
         <style>
+        /* 全体背景とコンテンツ幅 */
         .stApp { background-color: #f9f9fb; }
-        
-        /* メイン幅固定 */
         .block-container {
             max-width: 730px !important;
-            padding-top: 3rem !important;
-            padding-bottom: 160px !important;
+            padding-bottom: 120px !important; /* フッター分の余白 */
         }
 
-        /* --- 【決定版】下部ユニットの完全カプセル化 --- */
-
-        /* 1. 全てを包むコンテナ：これ自体を中央に1つだけ置く */
-        .ultra-footer-wrapper {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 730px; /* ヘッダー幅と厳密一致 */
-            height: 150px;
-            z-index: 9999;
-            pointer-events: none; /* 下の要素を邪魔しない */
-        }
-
-        /* 2. 内部の白い背景：wrapperの中にあるので、もうズレようがない */
-        .inner-white-plate {
-            width: 100%;
-            height: 100%;
-            background-color: #ffffff;
-            border-top: 1px solid #eaeaea;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        /* 3. 入力欄の強制上書き：標準の浮遊枠を無効化 */
+        /* 1. 入力エリアの背景（白い帯）を標準コンテナに密着させる */
         [data-testid="stChatFloatingInputContainer"] {
-            position: absolute !important;
-            bottom: 70px !important; /* wrapper底面からの距離 */
+            background-color: #ffffff !important;
+            border-top: 1px solid #eaeaea !important;
+            padding: 20px 0 40px 0 !important; /* 下部にCopyRight用の隙間を作る */
             left: 0 !important;
             right: 0 !important;
-            width: 95% !important; /* 少し内側に */
-            margin: 0 auto !important;
-            background: transparent !important;
-            border: none !important;
-            z-index: 2 !important;
-            transform: none !important; /* 親がズレを吸収するため不要 */
         }
 
-        /* 入力ボックス自体の枠（以前の赤い枠や不明な枠を消去） */
+        /* 2. 入力ボックス自体のデザインを整え、変な枠を消す */
         [data-testid="stChatInput"] {
+            max-width: 690px !important; /* 730pxの内側に収める */
+            margin: 0 auto !important;
             border: 1px solid #e0e0e0 !important;
             border-radius: 8px !important;
-            background-color: #fcfcfc !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
         }
         
-        /* 内部の「不明なテキスト枠」の原因（標準textareaの枠）を殺す */
-        [data-testid="stChatInput"] div, [data-testid="stChatInput"] textarea {
+        /* 入力ボックス内部の余計な影や枠をリセット */
+        [data-testid="stChatInput"] > div {
             border: none !important;
             box-shadow: none !important;
         }
 
-        /* 4. CopyRight：これもwrapperの中に閉じ込める */
-        .inner-footer-text {
+        /* 3. CopyRightエリア：入力コンテナの中に配置して絶対にズレないようにする */
+        .custom-footer {
             position: absolute;
-            bottom: 15px;
-            width: 100%;
+            bottom: 8px; /* 入力エリアのすぐ下 */
+            left: 0;
+            right: 0;
             text-align: center;
-            z-index: 3;
+            pointer-events: none;
+            line-height: 1.4;
         }
 
         .notice-red {
             color: #d93025;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
-            margin-bottom: 2px;
             display: block;
         }
         .copyright-gray {
@@ -98,17 +65,9 @@ if check_password():
             display: block;
         }
         </style>
-        
-        <div class="ultra-footer-wrapper">
-            <div class="inner-white-plate"></div>
-            <div class="inner-footer-text">
-                <span class="notice-red">【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。</span>
-                <span class="copyright-gray">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</span>
-            </div>
-        </div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー（幅730px固定） ---
+    # --- ヘッダー（幅固定） ---
     st.markdown("""
         <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 30px; max-width: 730px; margin-left: auto; margin-right: auto;">
             <div style="display: flex; align-items: center;">
@@ -127,6 +86,7 @@ if check_password():
     with st.sidebar:
         logout()
 
+    # チャット履歴の表示
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "user_id" not in st.session_state:
@@ -136,7 +96,8 @@ if check_password():
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- チャット入力 ---
+    # --- 4. チャット入力とフッターの連動 ---
+    # st.chat_input は常に表示される
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -159,4 +120,24 @@ if check_password():
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                 except Exception as e:
                     status.update(label="❌ エラー", state="error")
-                    st.error("システムエラーが発生しました。")
+                    st.error(f"システムエラーが発生しました。")
+
+    # --- 5. CopyRightを「入力エリアコンテナ」の中に差し込む ---
+    # HTMLの配置場所を変えることで、サイドバーとのズレを物理的に解消
+    st.markdown("""
+        <script>
+        const observer = new MutationObserver(function(mutations) {
+            const inputContainer = document.querySelector('[data-testid="stChatFloatingInputContainer"]');
+            if (inputContainer && !document.querySelector('.custom-footer')) {
+                const footer = document.createElement('div');
+                footer.className = 'custom-footer';
+                footer.innerHTML = `
+                    <span class="notice-red">【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。</span>
+                    <span class="copyright-gray">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</span>
+                `;
+                inputContainer.appendChild(footer);
+            }
+        });
+        observer.observe(document.body, {childList: true, subtree: true});
+        </script>
+    """, unsafe_allow_html=True)
