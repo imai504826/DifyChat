@@ -5,7 +5,7 @@ import uuid
 # --- 1. ページ設定 ---
 st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", layout="centered")
 
-# --- 2. 白ベースのクリーンなカスタムCSS ---
+# --- 2. 白ベース＆横並びロゴのカスタムCSS ---
 st.markdown("""
     <style>
     /* 全体の背景を白に */
@@ -13,61 +13,63 @@ st.markdown("""
         background-color: #ffffff;
     }
     
-    /* ヘッダーエリア：白背景にネイビーのアクセント */
-    .header-box {
-        background-color: #ffffff;
-        padding: 20px;
-        text-align: center;
+    /* ヘッダーエリア：横並びのレイアウト */
+    .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 20px 0;
         border-bottom: 2px solid #f0f2f6;
         margin-bottom: 30px;
     }
     
     /* ロゴの再現 (H IMAI イメージ) */
     .logo-circle {
-        width: 70px;
-        height: 70px;
+        width: 60px;
+        height: 60px;
         background: #061e3d;
         border-radius: 50%;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 10px;
-        position: relative;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        margin-right: 20px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     .logo-h {
         color: #ffffff;
-        font-size: 32px;
+        font-size: 28px;
         font-weight: 900;
         font-family: 'Georgia', serif;
+        line-height: 1;
     }
     .logo-imai {
-        position: absolute;
-        bottom: 10px;
-        font-size: 9px;
+        font-size: 8px;
         font-weight: bold;
         color: #ffffff;
         letter-spacing: 1px;
+        margin-top: -2px;
     }
 
+    /* タイトル部分のテキスト */
+    .title-text-box {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
     .header-title {
         color: #061e3d;
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 700;
-        margin: 10px 0 5px 0;
+        margin: 0;
+        line-height: 1.2;
     }
-    
     .header-subtitle {
         color: #666666;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 400;
-    }
-
-    /* チャットメッセージの調整 */
-    .stChatMessage {
-        background-color: #f8f9fa !important;
-        border: 1px solid #edf0f2;
-        border-radius: 10px;
+        margin-top: 4px;
     }
 
     /* フッター（コピーライト） */
@@ -79,25 +81,33 @@ st.markdown("""
         background-color: #061e3d;
         color: white;
         text-align: center;
-        padding: 8px 0;
+        padding: 10px 0;
         font-size: 11px;
         z-index: 100;
+        letter-spacing: 0.5px;
     }
 
-    /* コンテンツ全体の余白調整 */
+    /* チャット画面の余白調整 */
     .block-container {
-        padding-top: 2rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 5rem !important;
+    }
+    
+    /* 入力欄の微調整 */
+    .stChatInputContainer {
+        padding-bottom: 40px !important;
     }
     </style>
     
-    <div class="header-box">
+    <div class="header-container">
         <div class="logo-circle">
             <span class="logo-h">H</span>
             <span class="logo-imai">IMAI</span>
         </div>
-        <div class="header-title">今井社会保険労務士事務所</div>
-        <div class="header-subtitle">就業規則・労務リスク判定 AIアシスタント</div>
+        <div class="title-text-box">
+            <div class="header-title">今井社会保険労務士事務所</div>
+            <div class="header-subtitle">就業規則・労務リスク判定 AIアシスタント</div>
+        </div>
     </div>
     
     <div class="footer">
@@ -108,8 +118,8 @@ st.markdown("""
 # --- 3. Dify API 設定 ---
 try:
     DIFY_API_KEY = st.secrets["DIFY_API_KEY"]
-except:
-    st.error("DIFY_API_KEYが設定されていません。")
+except KeyError:
+    st.error("Secretsに DIFY_API_KEY が設定されていません。")
     st.stop()
 
 DIFY_ENDPOINT = "https://api.dify.ai/v1/chat-messages"
@@ -125,7 +135,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # --- 4. メイン処理 ---
-if prompt := st.chat_input("就業規則の条文や質問を入力してください..."):
+if prompt := st.chat_input("就業規則の条文を入力してください..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
