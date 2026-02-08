@@ -7,7 +7,7 @@ def check_password():
         """入力された内容を判定する内部関数"""
         # Secretsから取得、未設定ならデフォルト値(imai / imai2024)を使用
         valid_user = st.secrets.get("LOGIN_USER", "imai")
-        valid_pw = st.secrets.get("LOGIN_PW", "imai2024")
+        valid_pw = st.secrets.get("LOGIN_PW", "imai504826")
 
         if (st.session_state["username"] == valid_user and
             st.session_state["password"] == valid_pw):
