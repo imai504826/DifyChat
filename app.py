@@ -9,44 +9,53 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: 灰色入力エリアと白フッターの完全分離構造 ---
+    # --- CSS: 崩れを修正し、グレーと白を明確に分ける ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
         
-        /* 履歴が重ならないための余白 */
+        /* 履歴エリア：下部に固定エリア分の余白を確保 */
         .block-container {
             padding-top: 5rem !important;
             padding-bottom: 160px !important; 
             max-width: 750px;
         }
 
-        /* --- 【構造修正】グレーエリア(入力)とホワイトエリア(フッター)の分離 --- */
+        /* --- 入力欄とフッターの構造的修正 --- */
 
-        /* 1. 入力エリアの背景（グレーの帯）をシステム的に固定 */
+        /* 1. 灰色エリア：入力欄の背後を画面幅いっぱいにグレーにする */
         [data-testid="stChatInput"] {
             position: fixed !important;
-            bottom: 60px !important; /* フッターのすぐ上に配置 */
-            background-color: #f0f2f6 !important; /* 明確なグレーに設定 */
-            padding: 15px 0 !important;
-            z-index: 999 !important;
+            bottom: 60px !important; /* フッターの高さ分だけ上 */
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            background-color: #f0f2f6 !important; /* 灰色の帯 */
+            padding: 10px 0 !important;
+            z-index: 99 !important;
             border-top: 1px solid #e6e9ef !important;
         }
 
-        /* 2. フッターエリア（真っ白な帯）を最下部に固定 */
+        /* 入力ボックス自体が中央に正しく配置されるように強制 */
+        [data-testid="stChatInput"] > div {
+            max-width: 750px !important;
+            margin: 0 auto !important;
+        }
+
+        /* 2. 白色エリア：最下部のフッターを画面幅いっぱいに白くする */
         .fixed-white-footer {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 60px; /* フッターの高さを固定 */
-            background-color: #ffffff !important;
+            height: 60px;
+            background-color: #ffffff !important; /* 真っ白な帯 */
             border-top: 1px solid #eaeaea;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 1000; /* 入力欄より手前に出す */
+            z-index: 100;
         }
         
         .footer-red-text {
@@ -60,15 +69,10 @@ if check_password():
             color: #888888;
             font-size: 9px;
         }
-
-        /* 入力欄そのもののデザイン微調整 */
-        [data-testid="stChatInput"] > div {
-            border-radius: 10px !important;
-        }
         </style>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー（以前のデザインを維持） ---
+    # --- ヘッダー ---
     st.markdown("""
         <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 40px;">
             <div style="display: flex; align-items: center;">
@@ -96,7 +100,7 @@ if check_password():
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- チャット入力（グレーの帯の中に自動で配置される） ---
+    # --- チャット入力（CSSにより自動的にグレー帯の上に配置されます） ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -121,7 +125,7 @@ if check_password():
                     status.update(label="❌ エラー", state="error")
                     st.error("システムエラーが発生しました。")
 
-    # --- 修正の要：最下部の白いフッター ---
+    # --- 最下部の独立した白いフッター ---
     st.markdown("""
         <div class="fixed-white-footer">
             <div class="footer-red-text">
