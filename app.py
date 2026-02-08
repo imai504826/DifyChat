@@ -5,7 +5,7 @@ import uuid
 # --- 1. ページ設定 ---
 st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", layout="centered")
 
-# --- 2. 白ベース・見切れ防止カスタムCSS ---
+# --- 2. 白ベース・見切れ防止・標準ヘッダー復活CSS ---
 st.markdown("""
     <style>
     /* 全体の背景を白に */
@@ -13,18 +13,18 @@ st.markdown("""
         background-color: #ffffff;
     }
     
-    /* ヘッダーエリア：見切れ防止のためトップに余白を確保 */
+    /* 標準ヘッダーとの重なりを防ぐために上部に大きな余白（80px）を確保 */
     .header-container {
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        padding: 60px 20px 20px 0; /* 上部の余白を60pxに拡大 */
+        padding: 80px 20px 20px 0; /* padding-topを80pxに増やしました */
         border-bottom: 2px solid #f0f2f6;
         margin-bottom: 30px;
         background-color: #ffffff;
     }
     
-    /* ロゴの再現 */
+    /* ロゴのデザイン (H IMAI) */
     .logo-circle {
         width: 60px;
         height: 60px;
@@ -84,15 +84,15 @@ st.markdown("""
         z-index: 100;
     }
 
-    /* Streamlit標準のヘッダー（黒い帯）を非表示にする場合は以下 */
-    header {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-
     /* コンテンツの余白調整 */
     .block-container {
         padding-top: 0rem !important;
         padding-bottom: 6rem !important;
+    }
+    
+    /* 入力エリアがフッターに被らないよう調整 */
+    .stChatInputContainer {
+        padding-bottom: 40px !important;
     }
     </style>
     
