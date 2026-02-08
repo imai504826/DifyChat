@@ -108,7 +108,7 @@ st.markdown("""
     </div>
     
     <div class="footer">
-        © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+        © 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
     </div>
     """, unsafe_allow_html=True)
 
