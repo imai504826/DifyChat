@@ -9,47 +9,48 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: 崩れを修正し、グレーと白を明確に分ける ---
+    # --- CSS: 入力ボックスの正常化と背景の上下分離 ---
     st.markdown("""
         <style>
+        /* アプリ全体の背景 */
         .stApp { background-color: #f9f9fb; }
         
-        /* 履歴エリア：下部に固定エリア分の余白を確保 */
+        /* 履歴エリアの余白（下部のグレー帯＋白帯の分） */
         .block-container {
             padding-top: 5rem !important;
             padding-bottom: 160px !important; 
-            max-width: 750px;
         }
 
-        /* --- 入力欄とフッターの構造的修正 --- */
+        /* --- 【修正の肝】入力エリアとフッターの完全分離 --- */
 
-        /* 1. 灰色エリア：入力欄の背後を画面幅いっぱいにグレーにする */
+        /* 1. 入力欄（グレーの帯）を画面最下部から浮かせて固定 */
         [data-testid="stChatInput"] {
             position: fixed !important;
-            bottom: 60px !important; /* フッターの高さ分だけ上 */
+            bottom: 60px !important; /* 白いフッターの高さ分だけ上に配置 */
             left: 0 !important;
             right: 0 !important;
             width: 100% !important;
-            background-color: #f0f2f6 !important; /* 灰色の帯 */
+            background-color: #f0f2f6 !important; /* 綺麗なグレー帯 */
             padding: 10px 0 !important;
             z-index: 99 !important;
             border-top: 1px solid #e6e9ef !important;
         }
 
-        /* 入力ボックス自体が中央に正しく配置されるように強制 */
+        /* 入力ボックス内部の幅を「正常」に強制固定 */
         [data-testid="stChatInput"] > div {
-            max-width: 750px !important;
+            width: 100% !important;
+            max-width: 730px !important; /* layout="centered"に合わせた標準幅 */
             margin: 0 auto !important;
         }
 
-        /* 2. 白色エリア：最下部のフッターを画面幅いっぱいに白くする */
-        .fixed-white-footer {
+        /* 2. 白いフッターを最下部に「独立」して固定 */
+        .white-footer-container {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
             height: 60px;
-            background-color: #ffffff !important; /* 真っ白な帯 */
+            background-color: #ffffff !important; /* 独立した白いエリア */
             border-top: 1px solid #eaeaea;
             display: flex;
             flex-direction: column;
@@ -100,7 +101,7 @@ if check_password():
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- チャット入力（CSSにより自動的にグレー帯の上に配置されます） ---
+    # --- チャット入力 ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -125,9 +126,9 @@ if check_password():
                     status.update(label="❌ エラー", state="error")
                     st.error("システムエラーが発生しました。")
 
-    # --- 最下部の独立した白いフッター ---
+    # --- 最下部の独立した白いフッターエリア ---
     st.markdown("""
-        <div class="fixed-white-footer">
+        <div class="white-footer-container">
             <div class="footer-red-text">
                 【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
             </div>
