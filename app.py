@@ -9,20 +9,19 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: 下部エリアの統一と重なり解消 ---
+    # --- CSS: フッターのコンパクト化と入力欄の最適配置 ---
     st.markdown("""
         <style>
-        /* 全体の背景色 */
         .stApp { background-color: #f9f9fb; }
         
-        /* 履歴エリア：下部に大きな余白を作り、固定エリアと被らせない */
+        /* 履歴エリアの余白をフッターに合わせて最適化 */
         .block-container {
             padding-top: 5rem !important;
-            padding-bottom: 220px !important; 
+            padding-bottom: 120px !important; 
             max-width: 750px;
         }
 
-        /* ヘッダーデザイン */
+        /* ヘッダー */
         .custom-header-card {
             background-color: #ffffff;
             padding: 25px 30px;
@@ -31,79 +30,56 @@ if check_password():
             border: 1px solid #eaeaea;
             margin-bottom: 40px;
         }
-        .header-flex { display: flex; align-items: center; }
-        .logo-box {
-            width: 60px; height: 60px;
-            background-color: #061e3d;
-            border-radius: 50%;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            margin-right: 20px; flex-shrink: 0;
-        }
-        .logo-h { color: #ffffff; font-size: 28px; font-weight: 900; line-height: 1; }
-        .logo-imai { font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px; }
-
-        /* 【解決策】入力欄とフッターを一つの白い「土台」に統一 */
         
-        /* 1. Streamlit標準の入力コンテナの背景と影を消し、位置を固定 */
+        /* --- 【今回の核心】下部エリアのスリム化と統一化 --- */
+
+        /* 1. 入力欄をフッターのすぐ上に配置（重ならないギリギリの線を攻める） */
         [data-testid="stChatInput"] {
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            bottom: 80px !important; /* フッターの上に浮かせる */
-            z-index: 1001 !important;
+            bottom: 50px !important; /* フッターの高さ(50px)のすぐ上に固定 */
+            background-color: #f9f9fb !important; /* 背景色と統一 */
+            padding-top: 10px !important;
         }
 
-        /* 2. 下部全体を覆う「統一された白い帯」を作成 */
-        .unified-bottom-panel {
+        /* 2. フッターの幅（高さ）を極限まで狭くして「白い枠」を消す */
+        .compact-footer {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 160px; /* 入力欄とフッターを包む十分な高さ */
+            height: 50px; /* 高さを大幅に縮小 */
             background-color: #ffffff;
             border-top: 1px solid #eaeaea;
-            z-index: 1000;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end; /* 下詰めで配置 */
-            padding-bottom: 15px;
-        }
-
-        .footer-content-box {
-            text-align: center;
-            width: 100%;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
         
         .footer-red-text {
             color: #d93025;
-            font-size: 12px;
+            font-size: 11px; /* 文字を少し小さくして1行に収まりやすく */
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .footer-copy-text {
             color: #888888;
-            font-size: 10px;
+            font-size: 9px;
         }
+        
+        /* 判定中アニメーションの位置調整 */
+        .stStatusWidget { margin-bottom: 15px; }
         </style>
-        """, unsafe_allow_html=True)
-
-    def display_disclaimer():
-        st.markdown(f"""
-            <div style="background-color: #f8f9fa; border-left: 5px solid #061e3d; padding: 18px; margin: 15px 0; border-radius: 4px;">
-                <p style="color: #444444; font-size: 12px; line-height: 1.7; margin: 0;">
-                    <strong>【AI判定に関する重要事項】</strong><br>
-                    本システムは、当事務所監修の最新ナレッジを参照していますが、最終判断は必ず当事務所の社会保険労務士にご確認ください。
-                </p>
-            </div>
         """, unsafe_allow_html=True)
 
     # --- ヘッダー ---
     st.markdown("""
         <div class="custom-header-card">
-            <div class="header-flex">
-                <div class="logo-box"><span class="logo-h">H</span><span class="logo-imai">IMAI</span></div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 60px; height: 60px; background-color: #061e3d; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 20px;">
+                    <span style="color: #ffffff; font-size: 28px; font-weight: 900;">H</span>
+                    <span style="font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px;">IMAI</span>
+                </div>
                 <div>
                     <div style="color: #061e3d; font-size: 24px; font-weight: 700;">今井社会保険労務士事務所</div>
                     <div style="color: #666666; font-size: 14px;">就業規則・労務リスク判定 AIアシスタント</div>
@@ -120,11 +96,10 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
+    # メッセージ表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
-            if msg["role"] == "assistant":
-                display_disclaimer()
 
     # --- チャット入力 ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
@@ -133,7 +108,7 @@ if check_password():
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.status("🔍 条文を解析し、労務リスクを判定しています...", expanded=True) as status:
+            with st.status("🔍 条文を解析しています...", expanded=True) as status:
                 try:
                     D_KEY = st.secrets["DIFY_API_KEY"]
                     response = requests.post(
@@ -144,26 +119,21 @@ if check_password():
                     )
                     response.raise_for_status()
                     answer = response.json().get("answer", "回答を取得できませんでした。")
-                    
                     status.update(label="✅ 判定完了", state="complete", expanded=False)
                     st.markdown(answer)
-                    display_disclaimer()
                     st.session_state.messages.append({"role": "assistant", "content": answer})
-                    
                 except Exception as e:
                     status.update(label="❌ エラー", state="error")
                     st.error("システムエラーが発生しました。")
 
-    # --- 【統一化の核心】すべての下部要素を一つの「白い土台」の上に載せる ---
+    # --- 修正版：スリムな固定フッター ---
     st.markdown("""
-        <div class="unified-bottom-panel">
-            <div class="footer-content-box">
-                <div class="footer-red-text">
-                    【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
-                </div>
-                <div class="footer-copy-text">
-                    © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
-                </div>
+        <div class="compact-footer">
+            <div class="footer-red-text">
+                【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
+            </div>
+            <div class="footer-copy-text">
+                © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
             </div>
         </div>
     """, unsafe_allow_html=True)
