@@ -9,15 +9,15 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- デザインCSS（重なりを解消するための最新設計） ---
+    # --- デザインCSS（重なりを構造的に排除） ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
         
-        /* メインエリア：下部に大きな余白を作り、入力欄と重ならないようにする */
+        /* メインエリア：下部に大きな余白を確保 */
         .block-container {
             padding-top: 5rem !important;
-            padding-bottom: 160px !important; /* フッター分の高さを確保 */
+            padding-bottom: 10rem !important; 
             max-width: 750px;
         }
 
@@ -45,7 +45,7 @@ if check_password():
         .header-title { color: #061e3d; font-size: 24px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 14px; margin-top: 4px; }
         
-        /* 回答下の重要事項ボックス */
+        /* 回答内の免責ボックス */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
@@ -55,34 +55,38 @@ if check_password():
         }
         .disclaimer-text { color: #444444; font-size: 12px; line-height: 1.7; margin: 0; }
 
-        /* 【重要】入力欄のコンテナを調整して、フッターをその下に押し込む */
+        /* 【ここが重要】入力欄自体にフッター要素を埋め込む */
+        /* Streamlitの入力欄コンテナを背景として利用し、下部に余白を強制 */
         .stChatInputContainer {
+            padding-bottom: 70px !important;
             background-color: #f9f9fb !important;
-            padding-bottom: 80px !important; /* 入力欄の下にスペースを作る */
         }
 
-        /* フッター：入力欄の下に固定されるように位置を調整 */
-        .fixed-footer-container {
+        /* フッターを絶対配置ではなく、入力欄の下に「敷く」 */
+        .custom-footer-content {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: #f9f9fb;
-            text-align: center;
-            padding: 10px 0 20px 0;
-            z-index: 100;
+            height: 70px; /* 固定高さを指定 */
+            background-color: #ffffff; /* 入力欄との区別のため白背景 */
             border-top: 1px solid #eaeaea;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9; /* 入力欄(100以上)より低く設定 */
         }
+        
         .footer-disclaimer {
             color: #d93025;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 700;
-            margin-bottom: 4px;
-            padding: 0 10px;
+            margin-bottom: 5px;
         }
         .footer-copyright {
             color: #888888;
-            font-size: 10px;
+            font-size: 11px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -124,7 +128,7 @@ if check_password():
             if msg["role"] == "assistant":
                 display_disclaimer()
 
-    # --- チャット入力欄 ---
+    # --- チャット入力エリア ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -150,11 +154,11 @@ if check_password():
                     
                 except Exception as e:
                     status.update(label="❌ エラーが発生しました", state="error")
-                    st.error(f"システムエラーが発生しました。時間を置いて再度お試しください。")
+                    st.error("システムエラーが発生しました。時間を置いて再度お試しください。")
 
-    # --- 重なりを完全に防ぐためのフッター（入力欄のさらに下に配置） ---
+    # --- 重なりを物理的に不可能にするフッター配置 ---
     st.markdown("""
-        <div class="fixed-footer-container">
+        <div class="custom-footer-content">
             <div class="footer-disclaimer">
                 【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家に相談の上、自己責任で行ってください。
             </div>
