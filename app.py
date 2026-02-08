@@ -9,65 +9,60 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: シンプルな構造に整理 ---
+    # --- CSS: 構造を整理し、入力エリアとフッターを完全同期 ---
     st.markdown("""
         <style>
-        /* 全体背景とコンテンツ幅 */
+        /* 全体背景 */
         .stApp { background-color: #f9f9fb; }
+        
+        /* メインコンテンツ幅の固定 */
         .block-container {
             max-width: 730px !important;
-            padding-bottom: 120px !important; /* フッター分の余白 */
+            padding-bottom: 150px !important; 
         }
 
-        /* 1. 入力エリアの背景（白い帯）を標準コンテナに密着させる */
+        /* --- 下部固定エリア：標準コンテナのデザインを上書き --- */
+        
+        /* 入力エリアの背景（白い帯）と枠線 */
         [data-testid="stChatFloatingInputContainer"] {
             background-color: #ffffff !important;
             border-top: 1px solid #eaeaea !important;
-            padding: 20px 0 40px 0 !important; /* 下部にCopyRight用の隙間を作る */
+            padding: 20px 0 45px 0 !important; /* 下部にCopyRight用のスペースを確保 */
             left: 0 !important;
             right: 0 !important;
         }
 
-        /* 2. 入力ボックス自体のデザインを整え、変な枠を消す */
+        /* 入力ボックスのデザインを整え、不要な枠を消す */
         [data-testid="stChatInput"] {
-            max-width: 690px !important; /* 730pxの内側に収める */
+            max-width: 690px !important;
             margin: 0 auto !important;
             border: 1px solid #e0e0e0 !important;
             border-radius: 8px !important;
+            background-color: #fcfcfc !important;
         }
         
-        /* 入力ボックス内部の余計な影や枠をリセット */
         [data-testid="stChatInput"] > div {
             border: none !important;
             box-shadow: none !important;
         }
 
-        /* 3. CopyRightエリア：入力コンテナの中に配置して絶対にズレないようにする */
-        .custom-footer {
+        /* --- CopyRightを疑似要素（::after）で強制表示 --- */
+        /* これにより、サイドバーの動きと100%連動し、消えることもありません */
+        [data-testid="stChatFloatingInputContainer"]::after {
+            content: "© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office";
             position: absolute;
-            bottom: 8px; /* 入力エリアのすぐ下 */
+            bottom: 15px;
             left: 0;
             right: 0;
             text-align: center;
-            pointer-events: none;
-            line-height: 1.4;
-        }
-
-        .notice-red {
-            color: #d93025;
-            font-size: 10.5px;
-            font-weight: 700;
-            display: block;
-        }
-        .copyright-gray {
+            font-size: 10px;
             color: #888888;
-            font-size: 9px;
-            display: block;
+            font-family: sans-serif;
         }
         </style>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー（幅固定） ---
+    # --- ヘッダー（幅730px固定） ---
     st.markdown("""
         <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 30px; max-width: 730px; margin-left: auto; margin-right: auto;">
             <div style="display: flex; align-items: center;">
@@ -86,7 +81,6 @@ if check_password():
     with st.sidebar:
         logout()
 
-    # チャット履歴の表示
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "user_id" not in st.session_state:
@@ -96,8 +90,7 @@ if check_password():
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- 4. チャット入力とフッターの連動 ---
-    # st.chat_input は常に表示される
+    # --- チャット入力 ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -120,23 +113,4 @@ if check_password():
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                 except Exception as e:
                     status.update(label="❌ エラー", state="error")
-                    st.error(f"システムエラーが発生しました。")
-
-    # --- 5. CopyRightを「入力エリアコンテナ」の中に差し込む ---
-    # HTMLの配置場所を変えることで、サイドバーとのズレを物理的に解消
-    st.markdown("""
-        <script>
-        const observer = new MutationObserver(function(mutations) {
-            const inputContainer = document.querySelector('[data-testid="stChatFloatingInputContainer"]');
-            if (inputContainer && !document.querySelector('.custom-footer')) {
-                const footer = document.createElement('div');
-                footer.className = 'custom-footer';
-                footer.innerHTML = `
-                    <span class="copyright-gray">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</span>
-                `;
-                inputContainer.appendChild(footer);
-            }
-        });
-        observer.observe(document.body, {childList: true, subtree: true});
-        </script>
-    """, unsafe_allow_html=True)
+                    st.error("システムエラーが発生しました。")
