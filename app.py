@@ -3,39 +3,36 @@ import requests
 import uuid
 from auth import check_password, logout
 
-# --- 1. ページ設定 (最上部に配置) ---
+# --- 1. ページ設定 ---
 st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", layout="centered")
 
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- デザインCSS（余計な空白を徹底排除） ---
+    # --- デザインCSS ---
     st.markdown("""
         <style>
-        /* 1. Streamlit標準の上部空白と余計な要素を消す */
-        header {visibility: hidden;}
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        .stAppDeployButton {display:none;}
+        /* ヘッダーメニュー(上部ツールバー)は表示したままにするため header visibility は指定しない */
         
+        /* ページ上部の不要な余白を削る */
         .block-container {
-            padding-top: 1rem !important; /* 上の余白を最小化 */
+            padding-top: 1.5rem !important;
             max-width: 700px;
         }
 
-        /* 2. 背景とカードの設定 */
+        /* 画面全体の背景 */
         .stApp { background-color: #f9f9fb; }
         
+        /* 白いカード部分 */
         .main-card {
             background-color: #ffffff;
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             border: 1px solid #eaeaea;
-            margin-top: 0px;
         }
         
-        /* 3. ヘッダー（画像に合わせて最適化） */
+        /* ロゴとタイトルのヘッダー */
         .header-container {
             display: flex;
             align-items: center;
@@ -58,7 +55,7 @@ if check_password():
         .header-title { color: #061e3d; font-size: 20px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 12px; margin-top: 2px; }
         
-        /* 4. 免責事項（確実に見えるデザイン） */
+        /* 免責事項のデザイン */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
@@ -70,7 +67,7 @@ if check_password():
             color: #444444; font-size: 11px; line-height: 1.6; margin: 0;
         }
 
-        /* 5. フッター */
+        /* フッター */
         .custom-footer {
             margin-top: 30px; color: #888888; text-align: center;
             font-size: 10px; padding-bottom: 20px;
@@ -78,7 +75,7 @@ if check_password():
         </style>
         """, unsafe_allow_html=True)
 
-    # --- 重要事項（免責）表示関数 ---
+    # --- 免責事項表示用関数 ---
     def display_disclaimer():
         st.markdown("""
             <div class="disclaimer-box">
@@ -90,10 +87,13 @@ if check_password():
             </div>
         """, unsafe_allow_html=True)
 
-    # --- メインコンテンツ ---
-    st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    # ログアウトボタン（サイドバー）
+    with st.sidebar:
+        logout()
 
-    # ヘッダー（最上部に直置き）
+    # --- メインコンテンツの描画 ---
+    # ここでカードを開始し、その直後にヘッダーを置くことで空白を最小化
+    st.markdown('<div class="main-card">', unsafe_allow_html=True)
     st.markdown("""
         <div class="header-container">
             <div class="logo-box"><span class="logo-h">H</span><span class="logo-imai">IMAI</span></div>
@@ -104,15 +104,11 @@ if check_password():
         </div>
     """, unsafe_allow_html=True)
 
-    # ログアウトボタン（サイドバーへ移動してメイン画面をスッキリさせる）
-    with st.sidebar:
-        logout()
-
     # --- Dify 連携ロジック ---
     try:
         D_KEY = st.secrets["DIFY_API_KEY"]
-    except:
-        st.error("APIキー未設定")
+    except KeyError:
+        st.error("DIFY_API_KEY が st.secrets に設定されていません。")
         st.stop()
 
     if "messages" not in st.session_state:
@@ -120,22 +116,22 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
-    # 履歴表示（ここでも免責を確実に出す）
+    # 過去のメッセージ履歴を表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
-        if msg["role"] == "assistant":
-            display_disclaimer()
+            if msg["role"] == "assistant":
+                display_disclaimer()
 
-    # 入力エリア
+    # チャット入力
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
+        # ユーザーの質問を表示
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
+        # AIの回答を取得して表示
         with st.chat_message("assistant"):
-            res_box = st.empty()
-            res_box.markdown("🔍 判定中...")
             try:
                 response = requests.post(
                     "https://api.dify.ai/v1/chat-messages",
@@ -143,12 +139,18 @@ if check_password():
                     json={"inputs": {}, "query": prompt, "response_mode": "blocking", "user": st.session_state.user_id},
                     timeout=60
                 )
-                answer = response.json().get("answer", "回答不可")
-                res_box.markdown(answer)
-                display_disclaimer() # 回答直後に表示
+                response.raise_for_status()
+                answer = response.json().get("answer", "回答を取得できませんでした。")
+                
+                st.markdown(answer)
+                display_disclaimer() # 回答の直後に表示
+                
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"エラーが発生しました: {e}")
 
+    # カード終了
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    # フッター
     st.markdown('<div class="custom-footer">© 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</div>', unsafe_allow_html=True)
