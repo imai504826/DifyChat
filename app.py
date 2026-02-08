@@ -132,7 +132,6 @@ if check_password():
                 const footer = document.createElement('div');
                 footer.className = 'custom-footer';
                 footer.innerHTML = `
-                    <span class="notice-red">【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。</span>
                     <span class="copyright-gray">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</span>
                 `;
                 inputContainer.appendChild(footer);
