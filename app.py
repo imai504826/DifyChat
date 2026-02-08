@@ -9,50 +9,50 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: ヘッダーとの整列および下部エリアの構造化 ---
+    # --- CSS: サイドバーの状態に合わせて動的に位置を調整 ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
         
-        /* 履歴エリアの余白設定 */
+        /* メインコンテンツの幅設定 */
         .block-container {
             padding-top: 5rem !important;
             padding-bottom: 180px !important; 
-            max-width: 730px !important; /* ヘッダーの幅と統一 */
+            max-width: 730px !important;
         }
 
-        /* --- 下部エリアのデザイン（整列と分離の徹底） --- */
-
-        /* 1. グレーの入力帯：画面幅いっぱいだが、中身は中央寄せ */
+        /* --- 重要：固定要素をメインエリア内に封じ込める --- */
+        
+        /* 1. グレーの入力帯をメインエリアに合わせて配置 */
         [data-testid="stChatInput"] {
             position: fixed !important;
-            bottom: 60px !important; /* 白いフッターの高さ分だけ上 */
-            left: 0 !important;
-            right: 0 !important;
+            bottom: 60px !important;
+            /* 画面端ではなく、親要素の幅を基準にする設定 */
+            left: 50% !important;
+            transform: translateX(-50%) !important;
             width: 100% !important;
-            background-color: #f0f2f6 !important; /* 灰色帯 */
+            max-width: 100vw !important;
+            background-color: #f0f2f6 !important;
             padding: 15px 0 !important;
             z-index: 99 !important;
             border-top: 1px solid #e6e9ef !important;
-            display: flex !important;
-            justify-content: center !important;
         }
 
-        /* 入力ボックス自体をヘッダーの幅に完全一致させる */
+        /* 入力ボックス自体をヘッダーの幅(730px)と完全に同期 */
         [data-testid="stChatInput"] > div {
-            width: 100% !important;
-            max-width: 730px !important; /* ヘッダーと同じ最大幅 */
+            width: 90% !important; /* 余裕を持たせる */
+            max-width: 730px !important;
             margin: 0 auto !important;
         }
 
-        /* 2. 白いフッター帯：最下部に固定 */
+        /* 2. 白いフッターを最下部に配置（サイドバーを避けるため.main内に配置されるように調整） */
         .white-footer-panel {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
             height: 60px;
-            background-color: #ffffff !important; /* 白色帯 */
+            background-color: #ffffff !important;
             border-top: 1px solid #eaeaea;
             display: flex;
             flex-direction: column;
@@ -61,6 +61,12 @@ if check_password():
             z-index: 100;
         }
         
+        /* サイドバーが開いている時、フッターを右側に寄せる（Streamlitの標準挙動に合わせる） */
+        [data-testid="stSidebar"][aria-expanded="true"] ~ .main .white-footer-panel {
+            left: 260px; /* サイドバーの標準幅分 */
+            width: calc(100% - 260px);
+        }
+
         .footer-red-text {
             color: #d93025;
             font-size: 11px;
@@ -75,7 +81,7 @@ if check_password():
         </style>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー（以前のデザインを維持、幅730px） ---
+    # --- ヘッダー（幅を厳密に730pxで固定） ---
     st.markdown("""
         <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 40px; max-width: 730px; margin-left: auto; margin-right: auto;">
             <div style="display: flex; align-items: center;">
@@ -103,7 +109,7 @@ if check_password():
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- チャット入力（CSSの制御で自動的にグレー帯の中央に配置） ---
+    # --- チャット入力 ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
