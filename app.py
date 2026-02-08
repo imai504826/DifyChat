@@ -9,27 +9,27 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- デザインCSS ---
+    # --- デザインCSS（重なりを解消し、文字を読みやすく調整） ---
     st.markdown("""
         <style>
         /* ページ全体の背景 */
         .stApp { background-color: #f9f9fb; }
         
-        /* メインコンテナの余白調整（ヘッダー位置を適切に） */
+        /* メインコンテナの余白調整（ヘッダー位置をさらに下げ、下部余白を適切に） */
         .block-container {
-            padding-top: 4rem !important;
-            padding-bottom: 8rem !important; /* フッターと被らないよう下部余白を確保 */
+            padding-top: 5rem !important;
+            padding-bottom: 2rem !important;
             max-width: 750px;
         }
 
-        /* ヘッダーカード */
+        /* ヘッダーカード：余計な空白を完全排除 */
         .custom-header-card {
             background-color: #ffffff;
-            padding: 30px;
+            padding: 25px 30px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             border: 1px solid #eaeaea;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         
         .header-flex { display: flex; align-items: center; }
@@ -45,44 +45,41 @@ if check_password():
         .logo-h { color: #ffffff; font-size: 28px; font-weight: 900; font-family: 'Georgia', serif; line-height: 1; }
         .logo-imai { font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px; }
 
-        .header-title { color: #061e3d; font-size: 22px; font-weight: 700; margin: 0; }
-        .header-subtitle { color: #666666; font-size: 13px; margin-top: 4px; }
+        .header-title { color: #061e3d; font-size: 24px; font-weight: 700; margin: 0; }
+        .header-subtitle { color: #666666; font-size: 14px; margin-top: 4px; }
         
-        /* チャット回答下の重要事項ボックス */
+        /* 回答直下の重要事項ボックス */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
-            padding: 15px;
+            padding: 18px;
             margin: 15px 0;
             border-radius: 4px;
         }
-        .disclaimer-text { color: #444444; font-size: 11px; line-height: 1.6; margin: 0; }
+        .disclaimer-text { color: #444444; font-size: 12px; line-height: 1.7; margin: 0; }
 
-        /* 【新設】画面最下部に固定するフッター（免責事項入り） */
-        .footer-fixed {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #ffffff;
-            color: #666666;
+        /* スッキリしたフッター（重なりを防ぐため固定を解除し、自然に下に配置） */
+        .custom-footer {
+            margin-top: 60px;
+            padding: 30px 10px;
             text-align: center;
-            padding: 12px 10px;
-            font-size: 10px;
             border-top: 1px solid #eaeaea;
-            z-index: 999;
-            line-height: 1.5;
         }
         .footer-disclaimer {
+            color: #d93025; /* 警告色で注意を促す */
+            font-size: 13px; /* 少し大きく */
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .footer-copyright {
             color: #888888;
-            margin-bottom: 4px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
         }
 
-        /* チャットメッセージの背景 */
-        .stChatMessage {
-            background-color: #ffffff !important;
-            border: 1px solid #eaeaea !important;
-            margin-bottom: 10px !important;
+        /* 入力欄（st.chat_input）の背景を整える */
+        .stChatInputContainer {
+            padding-bottom: 20px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -94,7 +91,7 @@ if check_password():
                 <p class="disclaimer-text">
                     <strong>【AI判定に関する重要事項】</strong><br>
                     本システムは、当事務所が監修した最新の就業規則ナレッジ（RAG）を直接参照しており、一般的なAIに比べ高い正確性を備えています。<br>
-                    しかしながら、本回答はAIによる推論であり法的助言を確定させるものではありません。個別の事案に対する最終的な判断については、必ず当事務所の社会保険労務士にご確認ください。
+                    個別の事案に対する最終的な判断については、必ず当事務所の社会保険労務士にご確認ください。
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -105,7 +102,7 @@ if check_password():
             <div class="header-flex">
                 <div class="logo-box"><span class="logo-h">H</span><span class="logo-imai">IMAI</span></div>
                 <div>
-                    <div class="header-title">今井社会保険労務士事務所</div>
+                    <div class="header-title">今井久一郎 社会保険労務士事務所</div>
                     <div class="header-subtitle">就業規則・労務リスク判定 AIアシスタント</div>
                 </div>
             </div>
@@ -127,12 +124,14 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
+    # 履歴表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             if msg["role"] == "assistant":
                 display_disclaimer()
 
+    # チャット入力
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -153,14 +152,14 @@ if check_password():
             except Exception as e:
                 st.error(f"接続エラー: {e}")
 
-    # --- フッター（最下部固定：免責事項とコピーライト） ---
+    # --- 改良版フッター（一番下にゆったり配置） ---
     st.markdown("""
-        <div class="footer-fixed">
+        <div class="custom-footer">
             <div class="footer-disclaimer">
-                【免責事項】本AIの回答は法的助言を構成するものではありません。最終的な判断は必ず専門家に相談の上、自己責任で行ってください。
+                【免責事項】本AIの回答は法的助言ではありません。最終判断は自己責任で行ってください。
             </div>
-            <div>
-                © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+            <div class="footer-copyright">
+                © 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
             </div>
         </div>
     """, unsafe_allow_html=True)
