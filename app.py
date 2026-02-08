@@ -9,29 +9,22 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: 下部エリアの完全同期とクリーンアップ ---
+    # --- CSS: デザインの最適化 ---
     st.markdown("""
         <style>
-        /* 全体背景 */
         .stApp { background-color: #f9f9fb; }
-        
-        /* メインコンテンツ幅の固定 */
         .block-container {
             max-width: 730px !important;
             padding-bottom: 160px !important; 
         }
-
-        /* --- 入力コンテナのデザイン調整 --- */
         [data-testid="stChatFloatingInputContainer"] {
             background-color: #ffffff !important;
             border-top: 1px solid #eaeaea !important;
-            padding: 20px 0 60px 0 !important; /* CopyRight用の余白を十分に確保 */
+            padding: 20px 0 60px 0 !important;
             left: 0 !important;
             right: 0 !important;
             z-index: 99 !important;
         }
-
-        /* 入力ボックス自体の枠線を綺麗にする */
         [data-testid="stChatInput"] {
             max-width: 690px !important;
             margin: 0 auto !important;
@@ -39,25 +32,16 @@ if check_password():
             border-radius: 8px !important;
             background-color: #fcfcfc !important;
         }
-        
-        /* 余計な内側の枠線を消す */
-        [data-testid="stChatInput"] > div {
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        /* --- CopyRightを確実に表示させるための固定配置 --- */
         .custom-copyright-footer {
             position: fixed;
-            bottom: 20px; /* 画面最下部から少し浮かせる */
+            bottom: 20px;
             left: 0;
             right: 0;
             width: 100%;
             text-align: center;
-            z-index: 100; /* 入力コンテナより前面に配置 */
+            z-index: 100;
             pointer-events: none;
         }
-
         .copyright-text {
             color: #888888;
             font-size: 10px;
@@ -73,7 +57,7 @@ if check_password():
         </div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー（幅730px固定） ---
+    # --- ヘッダー ---
     st.markdown("""
         <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 30px; max-width: 730px; margin-left: auto; margin-right: auto;">
             <div style="display: flex; align-items: center;">
@@ -82,7 +66,7 @@ if check_password():
                     <span style="font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px;">IMAI</span>
                 </div>
                 <div>
-                    <div style="color: #061e3d; font-size: 21px; font-weight: 700; line-height: 1.2;">今井社会保険労務士事務所</div>
+                    <div style="color: #061e3d; font-size: 21px; font-weight: 700; line-height: 1.2;">今井久一郎 社会保険労務士事務所</div>
                     <div style="color: #666666; font-size: 13.5px; margin-top: 2px;">就業規則・労務リスク判定 AIアシスタント</div>
                 </div>
             </div>
@@ -92,36 +76,65 @@ if check_password():
     with st.sidebar:
         logout()
 
+    # セッション状態の初期化
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
+    # 過去のメッセージを表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- チャット入力 ---
+    # --- チャット入力エリア ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
+        # ユーザー入力を表示＆保存
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
+        # AIの回答処理
         with st.chat_message("assistant"):
             with st.status("🔍 解析・判定中...", expanded=True) as status:
                 try:
                     D_KEY = st.secrets["DIFY_API_KEY"]
                     response = requests.post(
                         "https://api.dify.ai/v1/chat-messages",
-                        headers={"Authorization": f"Bearer {D_KEY}", "Content-Type": "application/json"},
-                        json={"inputs": {}, "query": prompt, "response_mode": "blocking", "user": st.session_state.user_id},
+                        headers={
+                            "Authorization": f"Bearer {D_KEY}", 
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "inputs": {}, 
+                            "query": prompt, 
+                            "response_mode": "blocking", 
+                            "user": st.session_state.user_id
+                        },
                         timeout=120
                     )
+                    
+                    # HTTPエラーのチェック
                     response.raise_for_status()
-                    answer = response.json().get("answer", "回答を取得できませんでした。")
-                    status.update(label="✅ 判定完了", state="complete", expanded=False)
-                    st.markdown(answer)
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                    res_json = response.json()
+                    
+                    # 回答の抽出
+                    answer = res_json.get("answer", "")
+                    
+                    if answer:
+                        # 正常終了
+                        status.update(label="✅ 判定完了", state="complete", expanded=False)
+                        st.markdown(answer)
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
+                    else:
+                        # APIは成功したが、中身がない場合
+                        status.update(label="⚠️ 回答が得られませんでした", state="error")
+                        st.error("Difyから有効な回答が返されませんでした。API設定を確認してください。")
+                        
                 except Exception as e:
-                    status.update(label="❌ エラー", state="error")
-                    st.error("システムエラーが発生しました。")
+                    # エラー原因を画面に表示（デバッグ用）
+                    status.update(label="❌ システムエラー", state="error")
+                    st.error(f"システムエラーが発生しました: {str(e)}")
+
+    # 画面下部の余白確保
+    st.write("<br><br>", unsafe_allow_html=True)
