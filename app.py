@@ -15,55 +15,49 @@ if check_password():
         <style>
         .stApp { background-color: #ffffff; }
         
-        /* ヘッダー：白ベースでロゴと文字を横並び */
+        /* ヘッダーエリア */
         .header-container {
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            padding: 60px 0px 20px 0px;
+            padding: 80px 0px 20px 0px;
             border-bottom: 2px solid #f0f2f6;
             margin-bottom: 30px;
         }
         
-        /* ロゴ画像用のスタイル */
-        .logo-img {
-            height: 60px;
-            margin-right: 20px;
-        }
-
-        .title-text-box {
+        /* ロゴの円形デザイン */
+        .logo-box {
+            width: 70px;
+            height: 70px;
+            background-color: #061e3d;
+            border-radius: 50%;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
+        .logo-h { color: #ffffff; font-size: 32px; font-weight: 900; font-family: 'Georgia', serif; line-height: 1; }
+        .logo-imai { font-size: 10px; font-weight: bold; color: #ffffff; margin-top: -2px; letter-spacing: 1px; }
 
-        .header-title {
-            color: #061e3d;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-            line-height: 1.2;
-        }
-
-        .header-subtitle {
-            color: #666666;
-            font-size: 14px;
-            margin-top: 4px;
-        }
+        .header-title { color: #061e3d; font-size: 24px; font-weight: 700; margin: 0; line-height: 1.2; }
+        .header-subtitle { color: #666666; font-size: 14px; margin-top: 4px; }
         
-        /* 免責事項ボックス：確実に見えるように枠線を強調 */
+        /* 重要事項（免責）ボックス - 視認性を向上 */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
-            padding: 15px;
-            margin: 15px 0 30px 0;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin: 20px 0 40px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-
         .disclaimer-text {
-            color: #444444;
-            font-size: 11px;
-            line-height: 1.7;
+            color: #333333;
+            font-size: 12px;
+            line-height: 1.8;
             margin: 0;
         }
 
@@ -72,33 +66,27 @@ if check_password():
             background-color: #061e3d; color: white; text-align: center;
             padding: 10px 0; font-size: 11px; z-index: 100;
         }
-        
-        .block-container { padding-top: 0rem !important; padding-bottom: 6rem !important; }
-        
-        /* チャット吹き出しの調整 */
-        .stChatMessage { margin-bottom: -10px !important; }
+        .block-container { padding-top: 0rem !important; padding-bottom: 8rem !important; }
         </style>
         """, unsafe_allow_html=True)
 
-    # ロゴとタイトルの表示
-    # ※IMAIロゴ3.jpgのイメージをCSSとテキストで再現（画像リンク切れを防ぐため）
-    st.markdown(f"""
+    # ロゴとタイトルの描画（画像をコードで再現）
+    st.markdown("""
         <div class="header-container">
-            <div style="display: flex; align-items: center;">
-                <div style="background-color:#061e3d; color:white; padding:10px; border-radius:5px; margin-right:15px; font-family:serif; font-weight:900; font-size:30px; line-height:1; text-align:center;">
-                    H<br><span style="font-size:10px;">IMAI</span>
-                </div>
-                <div class="title-text-box">
-                    <div class="header-title">今井社会保険労務士事務所</div>
-                    <div class="header-subtitle">就業規則・労務リスク判定 AIアシスタント</div>
-                </div>
+            <div class="logo-box">
+                <span class="logo-h">H</span>
+                <span class="logo-imai">IMAI</span>
+            </div>
+            <div class="title-text-box">
+                <div class="header-title">今井社会保険労務士事務所</div>
+                <div class="header-subtitle">就業規則・労務リスク判定 AIアシスタント</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
     logout()
 
-    # --- 免責事項表示用関数（最新版） ---
+    # --- 重要事項（免責）関数 ---
     def display_disclaimer():
         st.markdown("""
             <div class="disclaimer-box">
@@ -123,11 +111,11 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
-    # --- 履歴表示 ---
-    # ループの中で、AIの回答の直後に必ず免責事項を差し込む
+    # --- 履歴の表示 ---
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+        # AIの回答の後に必ず免責を出す
         if msg["role"] == "assistant":
             display_disclaimer()
 
@@ -144,14 +132,19 @@ if check_password():
                 response = requests.post(
                     "https://api.dify.ai/v1/chat-messages",
                     headers={"Authorization": f"Bearer {D_KEY}", "Content-Type": "application/json"},
-                    json={"inputs": {}, "query": prompt, "response_mode": "blocking", "user": st.session_state.user_id},
+                    json={
+                        "inputs": {}, 
+                        "query": prompt, 
+                        "response_mode": "blocking", 
+                        "user": st.session_state.user_id
+                    },
                     timeout=60
                 )
                 response.raise_for_status()
                 answer = response.json().get("answer", "回答を取得できませんでした。")
                 
                 res_box.markdown(answer)
-                display_disclaimer()
+                display_disclaimer() # 回答の直後に表示
                 
                 st.session_state.messages.append({"role": "assistant", "content": answer})
                 
