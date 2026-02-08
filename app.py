@@ -9,92 +9,103 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: 無駄な線を排除し、ヘッダーと完璧に整列させる ---
+    # --- CSS: ヘッダー、入力欄、フッターを垂直に完璧に揃える ---
     st.markdown("""
         <style>
-        /* 全体背景 */
+        /* アプリ全体の背景 */
         .stApp { background-color: #f9f9fb; }
         
-        /* メインコンテンツ幅をヘッダーに固定 */
+        /* コンテンツ幅を 730px に統一 */
         .block-container {
-            padding-top: 5rem !important;
-            padding-bottom: 180px !important; 
             max-width: 730px !important;
+            padding-top: 4rem !important;
+            padding-bottom: 180px !important;
         }
 
-        /* --- 【決定版】下部エリアの統合デザイン --- */
+        /* --- 下部固定ユニットのデザイン --- */
 
-        /* 1. 下部全体の白い「土台」：サイドバーを避けて配置 */
-        .footer-unit-bg {
+        /* 背面の白いプレート（ヘッダーと同じ幅で中央固定） */
+        .fixed-footer-base {
             position: fixed;
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
             max-width: 730px; /* ヘッダーと完全一致 */
-            height: 140px; /* 入力欄とフッターを収める高さ */
+            height: 150px;
             background-color: #ffffff;
             border-top: 1px solid #eaeaea;
             box-shadow: 0 -5px 15px rgba(0,0,0,0.03);
-            z-index: 100;
+            z-index: 90;
+            pointer-events: none; /* 下の要素の邪魔をしない */
         }
 
-        /* 2. 入力エリアの調整：無駄な背景色や枠線を消して統合 */
-        [data-testid="stChatInput"] {
-            position: fixed !important;
-            bottom: 60px !important; /* フッターのすぐ上 */
+        /* Streamlit標準の入力欄コンテナを調整 */
+        [data-testid="stChatFloatingInputContainer"] {
+            background-color: transparent !important;
+            border: none !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
             width: 100% !important;
-            max-width: 700px !important; /* 内側に少しマージン */
-            background-color: transparent !important; /* 灰色を廃止し白に統合 */
-            border: none !important;
-            padding: 0 !important;
-            z-index: 101 !important;
-        }
-        
-        /* 入力ボックス内の影や境界線を微調整 */
-        [data-testid="stChatInput"] textarea {
-            border: 1px solid #e0e0e0 !important;
+            max-width: 730px !important;
+            padding: 0 15px !important;
+            bottom: 65px !important; /* 免責事項の上に配置 */
+            z-index: 100 !important;
         }
 
-        /* 3. フッターテキスト（免責事項） */
-        .footer-text-area {
-            position: absolute;
+        /* 入力ボックス内の装飾（無駄な線を消す） */
+        [data-testid="stChatInput"] {
+            border-radius: 10px !important;
+            border: 1px solid #e0e0e0 !important;
+            background-color: #fcfcfc !important;
+        }
+
+        /* フッターテキストの配置 */
+        .footer-text-unit {
+            position: fixed;
             bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
             width: 100%;
+            max-width: 730px;
             text-align: center;
+            z-index: 101;
         }
 
         .footer-red-text {
             color: #d93025;
             font-size: 11px;
             font-weight: 700;
-            margin-bottom: 3px;
-            padding: 0 20px;
+            margin-bottom: 2px;
         }
         .footer-copy-text {
             color: #888888;
             font-size: 9px;
         }
 
-        /* 無駄な標準線を消去 */
-        [data-testid="stHeader"] { background: rgba(0,0,0,0); }
-        .stChatFloatingInputContainer { background-color: transparent !important; border: none !important; }
+        /* サイドバーがある時の位置補正（Streamlit標準の挙動をサポート） */
+        @media (min-width: 992px) {
+            [data-testid="stSidebar"][aria-expanded="true"] ~ .main .fixed-footer-base,
+            [data-testid="stSidebar"][aria-expanded="true"] ~ .main .footer-text-unit {
+                margin-left: 0; /* 中央維持 */
+            }
+        }
         </style>
+        
+        <div class="fixed-footer-base"></div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー（幅730px） ---
+    # --- ヘッダー（幅730px固定） ---
     st.markdown("""
-        <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 40px; max-width: 730px; margin-left: auto; margin-right: auto;">
+        <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 40px;">
             <div style="display: flex; align-items: center;">
-                <div style="width: 60px; height: 60px; background-color: #061e3d; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 20px;">
-                    <span style="color: #ffffff; font-size: 28px; font-weight: 900;">H</span>
+                <div style="width: 58px; height: 58px; background-color: #061e3d; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 20px; flex-shrink: 0;">
+                    <span style="color: #ffffff; font-size: 26px; font-weight: 900; line-height: 1;">H</span>
                     <span style="font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px;">IMAI</span>
                 </div>
                 <div>
-                    <div style="color: #061e3d; font-size: 22px; font-weight: 700;">今井社会保険労務士事務所</div>
-                    <div style="color: #666666; font-size: 14px;">就業規則・労務リスク判定 AIアシスタント</div>
+                    <div style="color: #061e3d; font-size: 22px; font-weight: 700; line-height: 1.2;">今井社会保険労務士事務所</div>
+                    <div style="color: #666666; font-size: 14px; margin-top: 2px;">就業規則・労務リスク判定 AIアシスタント</div>
                 </div>
             </div>
         </div>
@@ -112,7 +123,7 @@ if check_password():
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # --- チャット入力（CSSで位置制御） ---
+    # --- チャット入力（標準機能を活かしつつ、CSSで中央固定） ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -137,16 +148,14 @@ if check_password():
                     status.update(label="❌ エラー", state="error")
                     st.error("システムエラーが発生しました。")
 
-    # --- 下部ユニット（白背景に全てを統合） ---
+    # --- 免責事項ユニット ---
     st.markdown("""
-        <div class="footer-unit-bg">
-            <div class="footer-text-area">
-                <div class="footer-red-text">
-                    【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
-                </div>
-                <div class="footer-copy-text">
-                    © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
-                </div>
+        <div class="footer-text-unit">
+            <div class="footer-red-text">
+                【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
+            </div>
+            <div class="footer-copy-text">
+                © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
             </div>
         </div>
     """, unsafe_allow_html=True)
