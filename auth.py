@@ -3,10 +3,10 @@ import streamlit as st
 def check_password():
     """
     ユーザー認証を行い、認証済みであればTrueを返す。
-    エラー回避のため secrets のキー存在確認を強化。
+    Username / Password の表記とキーを完全に一致させています。
     """
 
-    # --- 1. スタイル定義 (CSS) ---
+    # --- 1. デザイン定義 (CSS) ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb !important; }
@@ -15,7 +15,6 @@ def check_password():
             padding-top: 4rem !important;
             padding-bottom: 120px !important;
         }
-        /* ヘッダーカード */
         .login-header-card {
             background-color: #ffffff;
             padding: 25px 30px;
@@ -24,7 +23,6 @@ def check_password():
             border: 1px solid #eaeaea;
             margin-bottom: 30px;
         }
-        /* 固定フッター */
         .fixed-footer {
             position: fixed;
             bottom: 0;
@@ -36,19 +34,8 @@ def check_password():
             text-align: center;
             z-index: 9999;
         }
-        .footer-notice {
-            color: #d93025;
-            font-size: 11px;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .footer-copy {
-            color: #888888;
-            font-size: 10px;
-            display: block;
-        }
-        /* ボタン */
+        .footer-notice { color: #d93025; font-size: 11px; font-weight: bold; display: block; margin-bottom: 4px; }
+        .footer-copy { color: #888888; font-size: 10px; display: block; }
         div.stButton > button {
             width: 100%;
             background-color: #061e3d !important;
@@ -61,30 +48,33 @@ def check_password():
         </style>
     """, unsafe_allow_html=True)
 
+    # --- 2. 認証ロジック ---
     def password_entered():
-        """入力チェック (KeyError対策済み)"""
-        # secretsの中に 'passwords' があるか確認
+        # Secretsの中に [passwords] グループがあるか確認
         if "passwords" not in st.secrets:
-            st.error("設定ファイルに 'passwords' が見つかりません。")
+            st.error("Secrets設定に [passwords] が見つかりません。")
             return
 
-        user = st.session_state.get("username")
-        pwd = st.session_state.get("password")
+        # フォームの key="username" と key="password" から値を取得
+        user_input = st.session_state.get("username")
+        pass_input = st.session_state.get("password")
 
-        # ユーザー名が登録されており、パスワードが一致するか
-        if user in st.secrets["passwords"] and pwd == st.secrets["passwords"][user]:
+        # 照合
+        if user_input in st.secrets["passwords"] and pass_input == st.secrets["passwords"][user_input]:
             st.session_state["password_correct"] = True
+            # セキュリティのため入力をクリア
             if "password" in st.session_state: del st.session_state["password"]
             if "username" in st.session_state: del st.session_state["username"]
         else:
             st.session_state["password_correct"] = False
 
+    # 既にログイン済みの判定
     if st.session_state.get("password_correct", False):
         return True
 
-    # --- 3. 画面描画 ---
+    # --- 3. ログイン画面の表示 ---
     
-    # 今井久一郎デザインのヘッダー
+    # ヘッダーカード
     st.markdown("""
         <div class="login-header-card">
             <div style="display: flex; align-items: center;">
@@ -100,6 +90,7 @@ def check_password():
         </div>
     """, unsafe_allow_html=True)
 
+    # 入力フォーム（指示通りの key 設定）
     st.write("### ログイン")
     st.text_input("Username", key="username")
     st.text_input("Password", type="password", key="password", on_change=password_entered)
