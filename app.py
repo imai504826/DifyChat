@@ -9,48 +9,46 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: サイドバーの状態に合わせて動的に位置を調整 ---
+    # --- CSS: サイドバー開閉に左右されない中央配置 ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
         
-        /* メインコンテンツの幅設定 */
+        /* 履歴エリアとヘッダーの最大幅を統一 */
         .block-container {
             padding-top: 5rem !important;
             padding-bottom: 180px !important; 
             max-width: 730px !important;
         }
 
-        /* --- 重要：固定要素をメインエリア内に封じ込める --- */
-        
-        /* 1. グレーの入力帯をメインエリアに合わせて配置 */
+        /* --- 入力欄とフッターをサイドバーに連動させる --- */
+
+        /* 1. グレーの入力帯：.main（メインエリア）を親にする */
         [data-testid="stChatInput"] {
             position: fixed !important;
             bottom: 60px !important;
-            /* 画面端ではなく、親要素の幅を基準にする設定 */
-            left: 50% !important;
-            transform: translateX(-50%) !important;
+            /* 画面端（viewport）ではなく親の幅を基準に中央寄せ */
+            left: auto !important;
+            right: auto !important;
             width: 100% !important;
-            max-width: 100vw !important;
+            max-width: 730px !important; /* ヘッダーの最大幅に合わせる */
             background-color: #f0f2f6 !important;
             padding: 15px 0 !important;
             z-index: 99 !important;
-            border-top: 1px solid #e6e9ef !important;
+            border: 1px solid #e6e9ef !important;
+            border-radius: 15px 15px 0 0 !important;
         }
 
-        /* 入力ボックス自体をヘッダーの幅(730px)と完全に同期 */
-        [data-testid="stChatInput"] > div {
-            width: 90% !important; /* 余裕を持たせる */
-            max-width: 730px !important;
-            margin: 0 auto !important;
-        }
-
-        /* 2. 白いフッターを最下部に配置（サイドバーを避けるため.main内に配置されるように調整） */
-        .white-footer-panel {
+        /* 2. 白いフッター：これもメインエリアの幅に従わせる */
+        .fixed-footer-container {
             position: fixed;
             bottom: 0;
-            left: 0;
+            /* 親要素（メインエリア）の中央に配置するための魔法の3行 */
+            left: 50%;
+            transform: translateX(-50%);
+            
             width: 100%;
+            max-width: 730px; /* ヘッダー・入力欄と完全一致 */
             height: 60px;
             background-color: #ffffff !important;
             border-top: 1px solid #eaeaea;
@@ -61,10 +59,13 @@ if check_password():
             z-index: 100;
         }
         
-        /* サイドバーが開いている時、フッターを右側に寄せる（Streamlitの標準挙動に合わせる） */
-        [data-testid="stSidebar"][aria-expanded="true"] ~ .main .white-footer-panel {
-            left: 260px; /* サイドバーの標準幅分 */
-            width: calc(100% - 260px);
+        /* サイドバーが開いた時、Streamlitのメインエリア自体が右にズレるため、
+           固定要素もそれに追従するように調整 */
+        @media (min-width: 992px) {
+            .stApp[data-test-script-id="app.py"] .main {
+                display: flex;
+                justify-content: center;
+            }
         }
 
         .footer-red-text {
@@ -81,7 +82,7 @@ if check_password():
         </style>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー（幅を厳密に730pxで固定） ---
+    # --- ヘッダー（幅730pxで固定） ---
     st.markdown("""
         <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 40px; max-width: 730px; margin-left: auto; margin-right: auto;">
             <div style="display: flex; align-items: center;">
@@ -134,9 +135,9 @@ if check_password():
                     status.update(label="❌ エラー", state="error")
                     st.error("システムエラーが発生しました。")
 
-    # --- 最下部の独立した白いフッター ---
+    # --- フッター（入力欄と同じ幅で中央固定） ---
     st.markdown("""
-        <div class="white-footer-panel">
+        <div class="fixed-footer-container">
             <div class="footer-red-text">
                 【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
             </div>
