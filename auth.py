@@ -6,7 +6,7 @@ def check_password():
     def password_entered():
         """入力判定"""
         valid_user = st.secrets.get("LOGIN_USER", "imai")
-        valid_pw = st.secrets.get("LOGIN_PW", "imai2024")
+        valid_pw = st.secrets.get("LOGIN_PW", "imai504826")
 
         if (st.session_state["username"] == valid_user and
             st.session_state["password"] == valid_pw):
