@@ -5,7 +5,7 @@ import uuid
 # --- 1. ページ設定 ---
 st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", layout="centered")
 
-# --- 2. 白ベース＆横並びロゴのカスタムCSS ---
+# --- 2. 白ベース・見切れ防止カスタムCSS ---
 st.markdown("""
     <style>
     /* 全体の背景を白に */
@@ -13,17 +13,18 @@ st.markdown("""
         background-color: #ffffff;
     }
     
-    /* ヘッダーエリア：横並びのレイアウト */
+    /* ヘッダーエリア：見切れ防止のためトップに余白を確保 */
     .header-container {
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        padding: 20px 0;
+        padding: 60px 20px 20px 0; /* 上部の余白を60pxに拡大 */
         border-bottom: 2px solid #f0f2f6;
         margin-bottom: 30px;
+        background-color: #ffffff;
     }
     
-    /* ロゴの再現 (H IMAI イメージ) */
+    /* ロゴの再現 */
     .logo-circle {
         width: 60px;
         height: 60px;
@@ -52,27 +53,24 @@ st.markdown("""
         margin-top: -2px;
     }
 
-    /* タイトル部分のテキスト */
+    /* タイトルテキスト */
     .title-text-box {
         display: flex;
         flex-direction: column;
-        justify-content: center;
     }
     .header-title {
         color: #061e3d;
         font-size: 22px;
         font-weight: 700;
         margin: 0;
-        line-height: 1.2;
     }
     .header-subtitle {
         color: #666666;
         font-size: 13px;
-        font-weight: 400;
         margin-top: 4px;
     }
 
-    /* フッター（コピーライト） */
+    /* フッター（画面最下部に固定） */
     .footer {
         position: fixed;
         bottom: 0;
@@ -84,18 +82,17 @@ st.markdown("""
         padding: 10px 0;
         font-size: 11px;
         z-index: 100;
-        letter-spacing: 0.5px;
     }
 
-    /* チャット画面の余白調整 */
+    /* Streamlit標準のヘッダー（黒い帯）を非表示にする場合は以下 */
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* コンテンツの余白調整 */
     .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 5rem !important;
-    }
-    
-    /* 入力欄の微調整 */
-    .stChatInputContainer {
-        padding-bottom: 40px !important;
+        padding-top: 0rem !important;
+        padding-bottom: 6rem !important;
     }
     </style>
     
