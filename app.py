@@ -101,7 +101,7 @@ if check_password():
                 <span class="logo-imai">IMAI</span>
             </div>
             <div class="title-text-box">
-                <div class="header-title">今井社会保険労務士事務所</div>
+                <div class="header-title">今井久一郎社会保険労務士事務所</div>
                 <div class="header-subtitle">就業規則・労務リスク判定 AIアシスタント</div>
             </div>
         </div>
@@ -163,11 +163,4 @@ if check_password():
                 display_disclaimer()
                 st.session_state.messages.append({"role": "assistant", "content": answer})
                 
-            except Exception as e:
-                st.error(f"接続エラー: {e}")
-
-    # 白いカードの終了
-    st.markdown('</div>', unsafe_allow_html=True)
-                
-    # フッター表示
-    st.markdown('<div class="footer">© 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</div>', unsafe_allow_html=True)
+            except
