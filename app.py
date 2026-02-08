@@ -9,17 +9,19 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- デザインCSS（配置と視認性の最適化） ---
+    # --- デザインCSS（配置・固定表示の徹底） ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
         
+        /* メインエリアの余白 */
         .block-container {
             padding-top: 5rem !important;
             padding-bottom: 12rem !important; 
             max-width: 750px;
         }
 
+        /* ヘッダーカード */
         .custom-header-card {
             background-color: #ffffff;
             padding: 25px 30px;
@@ -30,7 +32,6 @@ if check_password():
         }
         
         .header-flex { display: flex; align-items: center; }
-        
         .logo-box {
             width: 60px; height: 60px;
             background-color: #061e3d;
@@ -41,10 +42,10 @@ if check_password():
         }
         .logo-h { color: #ffffff; font-size: 28px; font-weight: 900; font-family: 'Georgia', serif; line-height: 1; }
         .logo-imai { font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px; }
-
         .header-title { color: #061e3d; font-size: 24px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 14px; margin-top: 4px; }
         
+        /* チャット内の免責ボックス */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
@@ -54,7 +55,7 @@ if check_password():
         }
         .disclaimer-text { color: #444444; font-size: 12px; line-height: 1.7; margin: 0; }
 
-        /* 固定フッターのデザイン */
+        /* 【重要】最下部固定フッターの強制表示設定 */
         .footer-wrapper {
             position: fixed;
             bottom: 0;
@@ -63,24 +64,23 @@ if check_password():
             background-color: #f9f9fb;
             text-align: center;
             padding: 15px 0 25px 0;
-            z-index: 99;
+            z-index: 1000; /* 最前面に持ってくる */
             border-top: 1px solid #eaeaea;
         }
         .footer-disclaimer {
             color: #d93025;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
         .footer-copyright {
             color: #888888;
-            font-size: 12px;
+            font-size: 11px;
         }
 
-        /* 判定中メッセージのスタイル調整 */
-        .stStatusWidget {
-            border: none !important;
-            background: transparent !important;
+        /* 入力欄の微調整 */
+        .stChatInputContainer {
+            padding-bottom: 20px !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -95,7 +95,7 @@ if check_password():
             </div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー ---
+    # --- ヘッダー表示 ---
     st.markdown("""
         <div class="custom-header-card">
             <div class="header-flex">
@@ -123,14 +123,14 @@ if check_password():
             if msg["role"] == "assistant":
                 display_disclaimer()
 
-    # --- チャット入力 ---
+    # --- チャット入力 & 判定中表示 ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            # ステータス表示（判定中...）
+            # st.statusを使用して判定中であることを明示
             with st.status("🔍 条文を解析し、労務リスクを判定しています...", expanded=True) as status:
                 try:
                     D_KEY = st.secrets["DIFY_API_KEY"]
@@ -143,30 +143,28 @@ if check_password():
                             "response_mode": "blocking", 
                             "user": st.session_state.user_id
                         },
-                        timeout=120  # タイムアウトを120秒に延長
+                        timeout=120 # タイムアウトを長めに設定
                     )
-                    response.raise_for_status() # HTTPエラーがあれば例外を投げる
+                    response.raise_for_status()
                     answer = response.json().get("answer", "回答を取得できませんでした。")
                     
-                    status.update(label="✅ 判定が完了しました", state="complete", expanded=False)
-                    
-                    # 実際の回答表示
+                    status.update(label="✅ 判定完了", state="complete", expanded=False)
                     st.markdown(answer)
                     display_disclaimer()
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                     
                 except requests.exceptions.Timeout:
-                    status.update(label="⚠️ タイムアウトエラー", state="error", expanded=True)
-                    st.error("AIの判定に時間がかかりすぎています。条文を少し短くして再度お試しいただくか、しばらく時間をおいてください。")
+                    status.update(label="⚠️ 接続タイムアウト", state="error")
+                    st.error("判定に時間がかかりすぎています。少し時間を置いてから再度お試しください。")
                 except Exception as e:
-                    status.update(label="❌ エラーが発生しました", state="error", expanded=True)
-                    st.error(f"システムエラーが発生しました。時間を置いて再度お試しください。")
+                    status.update(label="❌ エラーが発生しました", state="error")
+                    st.error(f"システムエラーが発生しました。")
 
-    # --- 固定フッター ---
+    # --- 固定フッター（ここを最後ではなく、確実に描画される位置に配置） ---
     st.markdown("""
         <div class="footer-wrapper">
             <div class="footer-disclaimer">
-                【免責事項】本AIの回答は法的助言ではありません。最終判断は自己責任で行ってください。
+                【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家に相談の上、自己責任で行ってください。
             </div>
             <div class="footer-copyright">
                 © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
