@@ -102,7 +102,7 @@ st.markdown("""
             <span class="logo-imai">IMAI</span>
         </div>
         <div class="title-text-box">
-            <div class="header-title">今井社会保険労務士事務所</div>
+            <div class="header-title">今井久一郎 社会保険労務士事務所</div>
             <div class="header-subtitle">就業規則・労務リスク判定 AIアシスタント</div>
         </div>
     </div>
