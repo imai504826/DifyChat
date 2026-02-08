@@ -9,19 +9,19 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- デザインCSS（重なりを構造的に排除） ---
+    # --- デザインCSS（構造的に重なりを回避） ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
         
-        /* メインエリア：下部に大きな余白を確保 */
+        /* 1. メインエリア：入力欄とフッターの高さ分（約180px）を確実に確保 */
         .block-container {
             padding-top: 5rem !important;
-            padding-bottom: 10rem !important; 
+            padding-bottom: 180px !important; 
             max-width: 750px;
         }
 
-        /* ヘッダーカード */
+        /* 2. ヘッダーカード */
         .custom-header-card {
             background-color: #ffffff;
             padding: 25px 30px;
@@ -45,7 +45,7 @@ if check_password():
         .header-title { color: #061e3d; font-size: 24px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 14px; margin-top: 4px; }
         
-        /* 回答内の免責ボックス */
+        /* 3. 重要事項ボックス */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
@@ -55,38 +55,37 @@ if check_password():
         }
         .disclaimer-text { color: #444444; font-size: 12px; line-height: 1.7; margin: 0; }
 
-        /* 【ここが重要】入力欄自体にフッター要素を埋め込む */
-        /* Streamlitの入力欄コンテナを背景として利用し、下部に余白を強制 */
+        /* 4. 入力欄を上に押し上げる（フッター分の隙間を物理的に作る） */
         .stChatInputContainer {
-            padding-bottom: 70px !important;
+            bottom: 60px !important; /* フッターの高さ分、入力欄自体を上に浮かせる */
             background-color: #f9f9fb !important;
         }
 
-        /* フッターを絶対配置ではなく、入力欄の下に「敷く」 */
-        .custom-footer-content {
+        /* 5. フッターを画面の「真の最下部」に固定 */
+        .ultimate-footer {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 70px; /* 固定高さを指定 */
-            background-color: #ffffff; /* 入力欄との区別のため白背景 */
+            height: 60px;
+            background-color: #ffffff;
             border-top: 1px solid #eaeaea;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 9; /* 入力欄(100以上)より低く設定 */
+            z-index: 9999; /* 他のどの要素よりも前に出す */
         }
         
         .footer-disclaimer {
             color: #d93025;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         .footer-copyright {
             color: #888888;
-            font-size: 11px;
+            font-size: 10px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -135,7 +134,7 @@ if check_password():
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.status("🔍 条文を解析し、労務リスクを判定しています...", expanded=True) as status:
+            with st.status("🔍 解析・判定中...", expanded=True) as status:
                 try:
                     D_KEY = st.secrets["DIFY_API_KEY"]
                     response = requests.post(
@@ -153,14 +152,14 @@ if check_password():
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                     
                 except Exception as e:
-                    status.update(label="❌ エラーが発生しました", state="error")
-                    st.error("システムエラーが発生しました。時間を置いて再度お試しください。")
+                    status.update(label="❌ エラー", state="error")
+                    st.error("システムエラーが発生しました。")
 
-    # --- 重なりを物理的に不可能にするフッター配置 ---
+    # --- 最下部固定フッター（チャット入力後も消えないよう最後に配置） ---
     st.markdown("""
-        <div class="custom-footer-content">
+        <div class="ultimate-footer">
             <div class="footer-disclaimer">
-                【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家に相談の上、自己責任で行ってください。
+                【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
             </div>
             <div class="footer-copyright">
                 © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
