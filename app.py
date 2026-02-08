@@ -9,7 +9,7 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: 構造を整理し、入力エリアとフッターを完全同期 ---
+    # --- CSS: 下部エリアの完全同期とクリーンアップ ---
     st.markdown("""
         <style>
         /* 全体背景 */
@@ -18,21 +18,20 @@ if check_password():
         /* メインコンテンツ幅の固定 */
         .block-container {
             max-width: 730px !important;
-            padding-bottom: 150px !important; 
+            padding-bottom: 160px !important; 
         }
 
-        /* --- 下部固定エリア：標準コンテナのデザインを上書き --- */
-        
-        /* 入力エリアの背景（白い帯）と枠線 */
+        /* --- 入力コンテナのデザイン調整 --- */
         [data-testid="stChatFloatingInputContainer"] {
             background-color: #ffffff !important;
             border-top: 1px solid #eaeaea !important;
-            padding: 20px 0 45px 0 !important; /* 下部にCopyRight用のスペースを確保 */
+            padding: 20px 0 60px 0 !important; /* CopyRight用の余白を十分に確保 */
             left: 0 !important;
             right: 0 !important;
+            z-index: 99 !important;
         }
 
-        /* 入力ボックスのデザインを整え、不要な枠を消す */
+        /* 入力ボックス自体の枠線を綺麗にする */
         [data-testid="stChatInput"] {
             max-width: 690px !important;
             margin: 0 auto !important;
@@ -41,25 +40,37 @@ if check_password():
             background-color: #fcfcfc !important;
         }
         
+        /* 余計な内側の枠線を消す */
         [data-testid="stChatInput"] > div {
             border: none !important;
             box-shadow: none !important;
         }
 
-        /* --- CopyRightを疑似要素（::after）で強制表示 --- */
-        /* これにより、サイドバーの動きと100%連動し、消えることもありません */
-        [data-testid="stChatFloatingInputContainer"]::after {
-            content: "© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office";
-            position: absolute;
-            bottom: 15px;
+        /* --- CopyRightを確実に表示させるための固定配置 --- */
+        .custom-copyright-footer {
+            position: fixed;
+            bottom: 20px; /* 画面最下部から少し浮かせる */
             left: 0;
             right: 0;
+            width: 100%;
             text-align: center;
-            font-size: 10px;
+            z-index: 100; /* 入力コンテナより前面に配置 */
+            pointer-events: none;
+        }
+
+        .copyright-text {
             color: #888888;
+            font-size: 10px;
             font-family: sans-serif;
+            max-width: 730px;
+            margin: 0 auto;
+            display: block;
         }
         </style>
+        
+        <div class="custom-copyright-footer">
+            <span class="copyright-text">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</span>
+        </div>
         """, unsafe_allow_html=True)
 
     # --- ヘッダー（幅730px固定） ---
