@@ -2,7 +2,6 @@ import streamlit as st
 
 def check_password():
     """白を基調としたシンプルで洗練されたログイン画面を表示する"""
-    
     def password_entered():
         """入力判定"""
         valid_user = st.secrets.get("LOGIN_USER", "imai")
