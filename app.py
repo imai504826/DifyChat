@@ -5,65 +5,69 @@ import uuid
 # --- 1. ページ設定 ---
 st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", layout="centered")
 
-# --- 2. デザインを磨き上げるカスタムCSS ---
+# --- 2. 白ベースのクリーンなカスタムCSS ---
 st.markdown("""
     <style>
-    /* 全体の背景 */
+    /* 全体の背景を白に */
     .stApp {
-        background-color: #f4f7f9;
+        background-color: #ffffff;
     }
     
-    /* ヘッダーエリア */
+    /* ヘッダーエリア：白背景にネイビーのアクセント */
     .header-box {
-        background: linear-gradient(135deg, #061e3d 0%, #10305a 100%);
-        padding: 40px 20px;
-        border-radius: 0px 0px 20px 20px;
+        background-color: #ffffff;
+        padding: 20px;
         text-align: center;
-        color: white;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        border-bottom: 5px solid #c5a059; /* ゴールドのライン */
-        margin: -6rem -2rem 2rem -2rem;
+        border-bottom: 2px solid #f0f2f6;
+        margin-bottom: 30px;
     }
     
     /* ロゴの再現 (H IMAI イメージ) */
     .logo-circle {
-        width: 80px;
-        height: 80px;
-        background: white;
-        border: 3px solid #061e3d;
+        width: 70px;
+        height: 70px;
+        background: #061e3d;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 15px;
+        margin: 0 auto 10px;
         position: relative;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .logo-h {
-        color: #061e3d;
-        font-size: 38px;
+        color: #ffffff;
+        font-size: 32px;
         font-weight: 900;
         font-family: 'Georgia', serif;
     }
     .logo-imai {
         position: absolute;
-        bottom: 12px;
-        font-size: 10px;
+        bottom: 10px;
+        font-size: 9px;
         font-weight: bold;
-        color: #061e3d;
+        color: #ffffff;
         letter-spacing: 1px;
     }
 
     .header-title {
-        font-size: 26px;
+        color: #061e3d;
+        font-size: 24px;
         font-weight: 700;
         margin: 10px 0 5px 0;
-        letter-spacing: 1px;
     }
     
     .header-subtitle {
+        color: #666666;
         font-size: 14px;
-        opacity: 0.9;
-        font-weight: 300;
+        font-weight: 400;
+    }
+
+    /* チャットメッセージの調整 */
+    .stChatMessage {
+        background-color: #f8f9fa !important;
+        border: 1px solid #edf0f2;
+        border-radius: 10px;
     }
 
     /* フッター（コピーライト） */
@@ -75,14 +79,15 @@ st.markdown("""
         background-color: #061e3d;
         color: white;
         text-align: center;
-        padding: 10px 0;
-        font-size: 12px;
+        padding: 8px 0;
+        font-size: 11px;
         z-index: 100;
     }
 
-    /* チャット入力欄をフッターより上に配置するための余白 */
-    .main {
-        margin-bottom: 60px;
+    /* コンテンツ全体の余白調整 */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 5rem !important;
     }
     </style>
     
@@ -101,7 +106,12 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 3. Dify API 設定 ---
-DIFY_API_KEY = st.secrets.get("DIFY_API_KEY", "YOUR_API_KEY_HERE")
+try:
+    DIFY_API_KEY = st.secrets["DIFY_API_KEY"]
+except:
+    st.error("DIFY_API_KEYが設定されていません。")
+    st.stop()
+
 DIFY_ENDPOINT = "https://api.dify.ai/v1/chat-messages"
 
 if "messages" not in st.session_state:
@@ -115,14 +125,14 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # --- 4. メイン処理 ---
-if prompt := st.chat_input("就業規則の条文を入力してください..."):
+if prompt := st.chat_input("就業規則の条文や質問を入力してください..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
         placeholder = st.empty()
-        placeholder.markdown("⚖️ 判定中...")
+        placeholder.markdown("🔍 判定中...")
         
         try:
             response = requests.post(
@@ -143,4 +153,4 @@ if prompt := st.chat_input("就業規則の条文を入力してください..."
             st.session_state.messages.append({"role": "assistant", "content": answer})
             
         except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
+            st.error(f"接続エラー: {e}")
