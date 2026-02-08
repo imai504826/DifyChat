@@ -1,119 +1,63 @@
 import streamlit as st
 
 def check_password():
-    """白を基調としたシンプルで洗練されたログイン画面を表示する"""
-    def password_entered():
-        """入力判定"""
-        valid_user = st.secrets.get("LOGIN_USER", "imai")
-        valid_pw = st.secrets.get("LOGIN_PW", "imai504826")
+    # --- (中略: パスワードチェックのロジック) ---
 
-        if (st.session_state["username"] == valid_user and
-            st.session_state["password"] == valid_pw):
-            st.session_state["password_correct"] = True
-            del st.session_state["password"] 
-            del st.session_state["username"]
-        else:
-            st.session_state["password_correct"] = False
+    if "password_correct" not in st.session_state:
+        # ログイン画面専用のCSSとフッター
+        st.markdown("""
+            <style>
+            /* ログイン画面の背景調整 */
+            .stApp { background-color: #f9f9fb; }
 
-    if st.session_state.get("password_correct", False):
-        return True
+            /* ログインフォームの下に余白を作る */
+            .main .block-container {
+                padding-bottom: 100px !important;
+            }
 
-    # --- ログイン画面専用のカスタムCSS (白ベース) ---
-    st.markdown("""
-        <style>
-        /* 背景を明るいグレー/白に設定 */
-        .stApp {
-            background-color: #f8f9fa;
-        }
-        
-        /* ログインコンテナの装飾 */
-        .login-wrapper {
-            max-width: 400px;
-            margin: 80px auto 20px auto;
-            padding: 40px;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            text-align: center;
-            border: 1px solid #eaeaea;
-        }
-        
-        /* ロゴのデザイン (H IMAI) */
-        .logo-circle-small {
-            width: 65px; height: 65px;
-            background: #061e3d;
-            border-radius: 50%;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            margin: 0 auto 20px;
-        }
-        .logo-h-small { color: #ffffff; font-size: 30px; font-weight: 900; font-family: 'Georgia', serif; line-height: 1; }
-        .logo-imai-small { font-size: 8px; font-weight: bold; color: #ffffff; margin-top: -2px; }
+            /* ログイン画面専用フッター */
+            .login-footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                height: 80px;
+                background-color: #ffffff;
+                border-top: 1px solid #eaeaea;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 999;
+                pointer-events: none;
+            }
 
-        .office-name {
-            color: #061e3d;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        
-        .portal-label {
-            color: #888888;
-            font-size: 12px;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-        }
-        
-        /* Streamlitのフォーム境界線を消してスッキリさせる */
-        [data-testid="stForm"] {
-            border: none !important;
-            padding: 0 !important;
-        }
-        
-        /* ボタンをネイビーに */
-        div.stButton > button {
-            background-color: #061e3d;
-            color: white;
-            border-radius: 8px;
-            width: 100%;
-            border: none;
-            padding: 10px;
-            font-weight: 600;
-        }
-        div.stButton > button:hover {
-            background-color: #10305a;
-            color: white;
-        }
-        </style>
-        
-        <div class="login-wrapper">
-            <div class="logo-circle-small">
-                <span class="logo-h-small">H</span>
-                <span class="logo-imai-small">IMAI</span>
+            .footer-notice {
+                color: #d93025;
+                font-size: 10px;
+                font-weight: 700;
+                margin-bottom: 4px;
+                text-align: center;
+                padding: 0 20px;
+            }
+
+            .footer-copy {
+                color: #888888;
+                font-size: 9px;
+            }
+            </style>
+
+            <div class="login-footer">
+                <div class="footer-notice">
+                    【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
+                </div>
+                <div class="footer-copy">
+                    © 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+                </div>
             </div>
-            <div class="office-name">今井久一郎 社会保険労務士事務所</div>
-            <div class="portal-label">就業規則・労務リスク判定 AIアシスタント PORTAL</div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # 入力フォーム
-    left, mid, right = st.columns([1, 2, 1])
-    with mid:
-        with st.form("login_form"):
-            st.text_input("Username", key="username")
-            st.text_input("Password", type="password", key="password")
-            if st.form_submit_button("Sign In"):
-                password_entered()
-                if not st.session_state.get("password_correct", False):
-                    st.error("Invalid credentials")
-                else:
-                    st.rerun()
-                    
-    return False
+        """, unsafe_allow_html=True)
 
-def logout():
-    """ログアウト処理"""
-    if st.sidebar.button("Logout"):
-        for key in st.session_state.keys():
-            del st.session_state[key]
-        st.rerun()
+        # ここから下の st.text_input などがログインフォーム
+        st.write("### ログイン")
+        # --- (以下、パスワード入力フォームが続く) ---
