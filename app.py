@@ -12,19 +12,17 @@ if check_password():
     # --- デザインCSS ---
     st.markdown("""
         <style>
-        /* ページ全体の余白と背景 */
-        .stApp {
-            background-color: #f9f9fb;
-        }
+        /* ページ全体の背景 */
+        .stApp { background-color: #f9f9fb; }
         
-        /* メインコンテナの余白調整（ヘッダーを下げる） */
+        /* メインコンテナの余白調整（ヘッダー位置を適切に） */
         .block-container {
-            padding-top: 4rem !important; /* ここでヘッダーの高さを調整 */
-            padding-bottom: 6rem !important;
+            padding-top: 4rem !important;
+            padding-bottom: 8rem !important; /* フッターと被らないよう下部余白を確保 */
             max-width: 750px;
         }
 
-        /* ヘッダーカード：謎の空白エリアが出ないよう設計 */
+        /* ヘッダーカード */
         .custom-header-card {
             background-color: #ffffff;
             padding: 30px;
@@ -34,10 +32,7 @@ if check_password():
             margin-bottom: 30px;
         }
         
-        .header-flex {
-            display: flex;
-            align-items: center;
-        }
+        .header-flex { display: flex; align-items: center; }
         
         .logo-box {
             width: 60px; height: 60px;
@@ -53,7 +48,7 @@ if check_password():
         .header-title { color: #061e3d; font-size: 22px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 13px; margin-top: 4px; }
         
-        /* 重要事項（免責） */
+        /* チャット回答下の重要事項ボックス */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
@@ -61,23 +56,26 @@ if check_password():
             margin: 15px 0;
             border-radius: 4px;
         }
-        .disclaimer-text {
-            color: #444444; font-size: 11px; line-height: 1.6; margin: 0;
-        }
+        .disclaimer-text { color: #444444; font-size: 11px; line-height: 1.6; margin: 0; }
 
-        /* 画面最下部に固定するフッター */
+        /* 【新設】画面最下部に固定するフッター（免責事項入り） */
         .footer-fixed {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
             background-color: #ffffff;
-            color: #888888;
+            color: #666666;
             text-align: center;
-            padding: 15px 0;
-            font-size: 11px;
+            padding: 12px 10px;
+            font-size: 10px;
             border-top: 1px solid #eaeaea;
             z-index: 999;
+            line-height: 1.5;
+        }
+        .footer-disclaimer {
+            color: #888888;
+            margin-bottom: 4px;
         }
 
         /* チャットメッセージの背景 */
@@ -89,19 +87,19 @@ if check_password():
         </style>
         """, unsafe_allow_html=True)
 
-    # --- 重要事項（免責）関数 ---
+    # --- 重要事項（免責）表示関数（回答ごとに表示） ---
     def display_disclaimer():
         st.markdown("""
             <div class="disclaimer-box">
                 <p class="disclaimer-text">
                     <strong>【AI判定に関する重要事項】</strong><br>
-                    本システムは、当事務所が監修した<strong>最新の就業規則ナレッジ（RAG）を直接参照</strong>しており、一般的なAIに比べ高い正確性を備えています。<br>
+                    本システムは、当事務所が監修した最新の就業規則ナレッジ（RAG）を直接参照しており、一般的なAIに比べ高い正確性を備えています。<br>
                     しかしながら、本回答はAIによる推論であり法的助言を確定させるものではありません。個別の事案に対する最終的な判断については、必ず当事務所の社会保険労務士にご確認ください。
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダーの描画（位置を下げて表示） ---
+    # --- ヘッダー描画 ---
     st.markdown("""
         <div class="custom-header-card">
             <div class="header-flex">
@@ -114,7 +112,6 @@ if check_password():
         </div>
     """, unsafe_allow_html=True)
 
-    # サイドバーにログアウト
     with st.sidebar:
         logout()
 
@@ -130,14 +127,12 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
-    # 履歴表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             if msg["role"] == "assistant":
                 display_disclaimer()
 
-    # チャット入力
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -153,14 +148,19 @@ if check_password():
                 )
                 answer = response.json().get("answer", "回答を取得できませんでした。")
                 st.markdown(answer)
-                display_disclaimer() # 必ずセットで表示
+                display_disclaimer()
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             except Exception as e:
                 st.error(f"接続エラー: {e}")
 
-    # --- フッター（最下部固定） ---
+    # --- フッター（最下部固定：免責事項とコピーライト） ---
     st.markdown("""
         <div class="footer-fixed">
-            © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+            <div class="footer-disclaimer">
+                【免責事項】本AIの回答は法的助言を構成するものではありません。最終的な判断は必ず専門家に相談の上、自己責任で行ってください。
+            </div>
+            <div>
+                © 2024 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+            </div>
         </div>
     """, unsafe_allow_html=True)
