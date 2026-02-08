@@ -9,15 +9,15 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- デザインCSS（配置・固定表示の徹底） ---
+    # --- デザインCSS（重なりを解消するための最新設計） ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
         
-        /* メインエリアの余白 */
+        /* メインエリア：下部に大きな余白を作り、入力欄と重ならないようにする */
         .block-container {
             padding-top: 5rem !important;
-            padding-bottom: 12rem !important; 
+            padding-bottom: 160px !important; /* フッター分の高さを確保 */
             max-width: 750px;
         }
 
@@ -45,7 +45,7 @@ if check_password():
         .header-title { color: #061e3d; font-size: 24px; font-weight: 700; margin: 0; }
         .header-subtitle { color: #666666; font-size: 14px; margin-top: 4px; }
         
-        /* チャット内の免責ボックス */
+        /* 回答下の重要事項ボックス */
         .disclaimer-box {
             background-color: #f8f9fa;
             border-left: 5px solid #061e3d;
@@ -55,32 +55,34 @@ if check_password():
         }
         .disclaimer-text { color: #444444; font-size: 12px; line-height: 1.7; margin: 0; }
 
-        /* 【重要】最下部固定フッターの強制表示設定 */
-        .footer-wrapper {
+        /* 【重要】入力欄のコンテナを調整して、フッターをその下に押し込む */
+        .stChatInputContainer {
+            background-color: #f9f9fb !important;
+            padding-bottom: 80px !important; /* 入力欄の下にスペースを作る */
+        }
+
+        /* フッター：入力欄の下に固定されるように位置を調整 */
+        .fixed-footer-container {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
             background-color: #f9f9fb;
             text-align: center;
-            padding: 15px 0 25px 0;
-            z-index: 1000; /* 最前面に持ってくる */
+            padding: 10px 0 20px 0;
+            z-index: 100;
             border-top: 1px solid #eaeaea;
         }
         .footer-disclaimer {
             color: #d93025;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            padding: 0 10px;
         }
         .footer-copyright {
             color: #888888;
-            font-size: 11px;
-        }
-
-        /* 入力欄の微調整 */
-        .stChatInputContainer {
-            padding-bottom: 20px !important;
+            font-size: 10px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -95,7 +97,7 @@ if check_password():
             </div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー表示 ---
+    # --- ヘッダー ---
     st.markdown("""
         <div class="custom-header-card">
             <div class="header-flex">
@@ -116,34 +118,27 @@ if check_password():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
 
-    # 履歴表示
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             if msg["role"] == "assistant":
                 display_disclaimer()
 
-    # --- チャット入力 & 判定中表示 ---
+    # --- チャット入力欄 ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            # st.statusを使用して判定中であることを明示
             with st.status("🔍 条文を解析し、労務リスクを判定しています...", expanded=True) as status:
                 try:
                     D_KEY = st.secrets["DIFY_API_KEY"]
                     response = requests.post(
                         "https://api.dify.ai/v1/chat-messages",
                         headers={"Authorization": f"Bearer {D_KEY}", "Content-Type": "application/json"},
-                        json={
-                            "inputs": {}, 
-                            "query": prompt, 
-                            "response_mode": "blocking", 
-                            "user": st.session_state.user_id
-                        },
-                        timeout=120 # タイムアウトを長めに設定
+                        json={"inputs": {}, "query": prompt, "response_mode": "blocking", "user": st.session_state.user_id},
+                        timeout=120
                     )
                     response.raise_for_status()
                     answer = response.json().get("answer", "回答を取得できませんでした。")
@@ -153,16 +148,13 @@ if check_password():
                     display_disclaimer()
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                     
-                except requests.exceptions.Timeout:
-                    status.update(label="⚠️ 接続タイムアウト", state="error")
-                    st.error("判定に時間がかかりすぎています。少し時間を置いてから再度お試しください。")
                 except Exception as e:
                     status.update(label="❌ エラーが発生しました", state="error")
-                    st.error(f"システムエラーが発生しました。")
+                    st.error(f"システムエラーが発生しました。時間を置いて再度お試しください。")
 
-    # --- 固定フッター（ここを最後ではなく、確実に描画される位置に配置） ---
+    # --- 重なりを完全に防ぐためのフッター（入力欄のさらに下に配置） ---
     st.markdown("""
-        <div class="footer-wrapper">
+        <div class="fixed-footer-container">
             <div class="footer-disclaimer">
                 【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家に相談の上、自己責任で行ってください。
             </div>
