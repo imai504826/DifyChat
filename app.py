@@ -9,7 +9,7 @@ st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", la
 # --- 2. 認証チェック ---
 if check_password():
     
-    # --- CSS: 全ての要素を 730px の中心軸に拘束する ---
+    # --- CSS: サイドバーの状態に関わらず、全ての要素を垂直に拘束する ---
     st.markdown("""
         <style>
         .stApp { background-color: #f9f9fb; }
@@ -21,47 +21,56 @@ if check_password():
             padding-bottom: 160px !important;
         }
 
-        /* --- 下部固定ユニットの再構築 --- */
+        /* --- 【最終解】下部ユニットの完全統合制御 --- */
 
-        /* 1. 背面の白いプレート：730px幅で中央固定 */
-        .footer-bg-panel {
+        /* 1. 下部全体の白い「土台」：サイドバーに連動して動くように設定 */
+        .fixed-footer-wrapper {
             position: fixed;
             bottom: 0;
+            /* ブラウザの左端ではなく、メインエリア内の中央を基準にする */
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
-            max-width: 730px;
-            height: 140px;
+            max-width: 730px; /* ヘッダーと完全一致 */
+            height: 150px;
             background-color: #ffffff;
             border-top: 1px solid #eaeaea;
-            z-index: 90;
-            pointer-events: none;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.03);
+            z-index: 99;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 内部要素を中央に強制 */
+            pointer-events: none; /* 入力欄へのクリックを通す */
         }
 
-        /* 2. 入力欄：コンテナを730px幅にして中央寄せ */
+        /* 2. 入力エリア：標準の浮遊コンテナを殺し、wrapperに追従させる */
         [data-testid="stChatFloatingInputContainer"] {
-            background-color: transparent !important;
-            border: none !important;
+            position: fixed !important;
+            bottom: 65px !important; /* wrapper内の位置調整 */
             left: 50% !important;
             transform: translateX(-50%) !important;
             width: 100% !important;
-            max-width: 730px !important;
-            padding: 0 20px !important; /* 内側に余白を作り入力欄を整える */
-            bottom: 60px !important;
+            max-width: 730px !important; /* wrapperと同じ幅 */
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 20px !important;
             z-index: 100 !important;
         }
 
-        /* 3. 免責事項・CopyRight：入力欄と全く同じ条件で配置 */
+        /* 入力ボックス自体のデザイン */
+        [data-testid="stChatInput"] {
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 10px !important;
+            background-color: #fcfcfc !important;
+        }
+
+        /* 3. CopyRightと免責事項：wrapper内の最下部に固定 */
         .footer-text-unit {
-            position: fixed;
+            position: absolute;
             bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
             width: 100%;
-            max-width: 730px; /* 入力欄コンテナと完全に一致させる */
             text-align: center;
             z-index: 101;
-            pointer-events: none;
         }
 
         .footer-red-text {
@@ -69,6 +78,7 @@ if check_password():
             font-size: 11px;
             font-weight: 700;
             margin-bottom: 3px;
+            padding: 0 10px;
         }
         .footer-copy-text {
             color: #888888;
@@ -76,13 +86,23 @@ if check_password():
             display: block;
         }
 
-        /* 標準の入力欄から不要な枠線を消去 */
-        [data-testid="stChatInput"] {
-            border: 1px solid #e0e0e0 !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+        /* サイドバー展開時のメインエリアのズレを吸収するおまじない */
+        [data-testid="stSidebar"][aria-expanded="true"] ~ .main .fixed-footer-wrapper,
+        [data-testid="stSidebar"][aria-expanded="true"] ~ .main [data-testid="stChatFloatingInputContainer"] {
+            /* left: 50% がサイドバーを除いた領域の中央になるよう、ブラウザが自動計算します */
         }
         </style>
-        <div class="footer-bg-panel"></div>
+        
+        <div class="fixed-footer-wrapper">
+            <div class="footer-text-unit">
+                <div class="footer-red-text">
+                    【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
+                </div>
+                <div class="footer-copy-text">
+                    © 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
+                </div>
+            </div>
+        </div>
         """, unsafe_allow_html=True)
 
     # --- ヘッダー（幅730px固定） ---
@@ -137,15 +157,3 @@ if check_password():
                 except Exception as e:
                     status.update(label="❌ エラー", state="error")
                     st.error("システムエラーが発生しました。")
-
-    # --- CopyRightを含む下部テキスト（入力欄と同じ幅で中央固定） ---
-    st.markdown("""
-        <div class="footer-text-unit">
-            <div class="footer-red-text">
-                【免責事項】本AIの回答は法的助言ではありません。最終判断は必ず専門家へ相談の上、自己責任で行ってください。
-            </div>
-            <div class="footer-copy-text">
-                © 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
