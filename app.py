@@ -151,7 +151,8 @@ if prompt := st.chat_input("就業規則の条文を入力してください..."
                     "response_mode": "blocking",
                     "user": st.session_state.user_id,
                     "conversation_id": ""
-                }
+                },
+                timeout=120  # ここで待機時間を増やしました
             )
             response.raise_for_status()
             answer = response.json().get("answer", "回答が取得できませんでした。")
