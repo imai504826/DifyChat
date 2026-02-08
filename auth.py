@@ -92,8 +92,8 @@ def check_password():
                 <span class="logo-h-small">H</span>
                 <span class="logo-imai-small">IMAI</span>
             </div>
-            <div class="office-name">今井社会保険労務士事務所</div>
-            <div class="portal-label">AI ASSISTANT PORTAL</div>
+            <div class="office-name">今井久一郎 社会保険労務士事務所</div>
+            <div class="portal-label">就業規則・労務リスク判定 AIアシスタント PORTAL</div>
         </div>
     """, unsafe_allow_html=True)
     
