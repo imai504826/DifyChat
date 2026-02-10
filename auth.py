@@ -1,68 +1,90 @@
 import streamlit as st
+import os
+import base64
+
+def get_image_base64(file_path):
+    """画像をBase64文字列に変換する"""
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
 
 def check_password():
     """
     ユーザー認証を行い、認証済みであればTrueを返す。
-    Username / Password の表記とキーを完全に一致させています。
     """
 
-    # --- 1. デザイン定義 (CSS) ---
+    # --- 1. デザイン定義 (CSS: 優しい色合い) ---
     st.markdown("""
         <style>
-        .stApp { background-color: #f9f9fb !important; }
+        /* 背景色をウォームホワイトに */
+        .stApp { background-color: #fcfbf9 !important; }
+        
         .main .block-container {
-            max-width: 480px !important;
-            padding-top: 4rem !important;
-            padding-bottom: 120px !important;
+            max-width: 450px !important;
+            padding-top: 5rem !important;
         }
+        
+        /* ログインカードのデザインを柔らかく */
         .login-header-card {
             background-color: #ffffff;
-            padding: 25px 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #eaeaea;
-            margin-bottom: 30px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(200, 210, 220, 0.2);
+            border: 1px solid #f2f2f2;
+            margin-bottom: 25px;
+            text-align: center;
         }
+
+        /* 入力ラベルの調整 */
+        .stTextInput label {
+            color: #7f8c8d !important;
+        }
+
+        /* ログインボタンを優しい色に */
+        div.stButton > button {
+            width: 100%;
+            background-color: #5d6d7e !important; /* 柔らかいスレートグレー */
+            color: white !important;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+        div.stButton > button:hover {
+            background-color: #485461 !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* フッター */
         .fixed-footer {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: #ffffff;
-            border-top: 1px solid #eaeaea;
+            background-color: rgba(252, 251, 249, 0.9);
             padding: 15px 0;
             text-align: center;
             z-index: 9999;
         }
-        .footer-notice { color: #d93025; font-size: 11px; font-weight: bold; display: block; margin-bottom: 4px; }
-        .footer-copy { color: #888888; font-size: 10px; display: block; }
-        div.stButton > button {
-            width: 100%;
-            background-color: #061e3d !important;
-            color: white !important;
-            border: none;
-            padding: 12px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
+        .footer-notice { color: #c0392b; font-size: 10px; display: block; margin-bottom: 4px; padding: 0 20px; }
+        .footer-copy { color: #aab; font-size: 9px; display: block; }
         </style>
     """, unsafe_allow_html=True)
 
     # --- 2. 認証ロジック ---
     def password_entered():
-        # Secretsの中に [passwords] グループがあるか確認
         if "passwords" not in st.secrets:
             st.error("Secrets設定に [passwords] が見つかりません。")
             return
 
-        # フォームの key="username" と key="password" から値を取得
         user_input = st.session_state.get("username")
         pass_input = st.session_state.get("password")
 
-        # 照合
         if user_input in st.secrets["passwords"] and pass_input == st.secrets["passwords"][user_input]:
             st.session_state["password_correct"] = True
-            # セキュリティのため入力をクリア
             if "password" in st.session_state: del st.session_state["password"]
             if "username" in st.session_state: del st.session_state["username"]
         else:
@@ -74,31 +96,37 @@ def check_password():
 
     # --- 3. ログイン画面の表示 ---
     
-    # ヘッダーカード
-    st.markdown("""
+    # ロゴの読み込み
+    logo_path = "image/CSI&LC IMAIのロゴ.jpg"
+    logo_b64 = get_image_base64(logo_path)
+
+    # ヘッダーカード（ロゴ＋タイトル）
+    if logo_b64:
+        logo_html = f'<img src="data:image/jpeg;base64,{logo_b64}" style="width: 80px; margin-bottom: 15px;">'
+    else:
+        logo_html = '<div style="font-size: 40px; margin-bottom: 10px;">⚖️</div>'
+
+    st.markdown(f"""
         <div class="login-header-card">
-            <div style="display: flex; align-items: center;">
-                <div style="width: 50px; height: 50px; background-color: #061e3d; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 15px;">
-                    <span style="color: #ffffff; font-size: 22px; font-weight: 900; line-height: 1;">H</span>
-                    <span style="font-size: 8px; font-weight: bold; color: #ffffff; margin-top: -2px;">IMAI</span>
-                </div>
-                <div>
-                    <div style="color: #061e3d; font-size: 18px; font-weight: 700; line-height: 1.2;">今井久一郎 社会保険労務士事務所</div>
-                    <div style="color: #666666; font-size: 12px; margin-top: 2px;">就業規則・労務リスク判定 AIアシスタント</div>
-                </div>
+            {logo_html}
+            <div style="color: #2c3e50; font-size: 19px; font-weight: 700; line-height: 1.4;">
+                今井久一郎<br>社会保険労務士事務所
+            </div>
+            <div style="color: #95a5a6; font-size: 12px; margin-top: 8px;">
+                労務リスク判定 AIアシスタント
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # 入力フォーム（指示通りの key 設定）
-    st.write("### ログイン")
-    st.text_input("Username", key="username")
-    st.text_input("Password", type="password", key="password", on_change=password_entered)
-    
-    if st.button("Sign In"):
-        password_entered()
-        if not st.session_state.get("password_correct", False):
-            st.error("⚠️ ユーザー名またはパスワードが正しくありません。")
+    # 入力フォーム
+    with st.container():
+        st.text_input("Username", key="username")
+        st.text_input("Password", type="password", key="password", on_change=password_entered)
+        
+        if st.button("Sign In"):
+            password_entered()
+            if not st.session_state.get("password_correct", False):
+                st.error("⚠️ ユーザー名またはパスワードが正しくありません。")
 
     # フッター
     st.markdown("""
@@ -111,6 +139,13 @@ def check_password():
     return False
 
 def logout():
-    if st.sidebar.button("Logout"):
-        st.session_state["password_correct"] = False
-        st.rerun()
+    """
+    ログアウト処理: セッションをクリアしてリライト
+    app.py側で st.button が押された時に呼び出されます。
+    """
+    st.session_state["password_correct"] = False
+    # チャット履歴等も消去
+    if "messages" in st.session_state:
+        st.session_state["messages"] = []
+    # ログイン画面に強制的に戻すためにリライトを実行
+    st.rerun()
