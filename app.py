@@ -1,54 +1,70 @@
 import streamlit as st
 import requests
 import uuid
+import base64
+import os
 from auth import check_password, logout
 
 # --- 1. ページ設定 ---
-st.set_page_config(page_title="労務リスク判定 AI", page_icon="⚖️", layout="centered")
+st.set_page_config(page_title="労務リスク判定 AI", page_icon="🌿", layout="centered")
+
+# --- 画像読み込み関数 ---
+def get_image_base64(file_path):
+    """画像をBase64文字列に変換する"""
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as img_file:
+            encoded_string = base64.b64encode(img_file.read()).decode()
+            return f"data:image/jpeg;base64,{encoded_string}" # 拡張子がpngなら image/png に変更
+    return None
 
 # --- 2. 認証チェック ---
 if check_password():
-    
-    # --- CSS: デザインの最適化 ---
+
+    # --- CSS: デザインの最適化（優しい色合い・ソフトデザイン） ---
     st.markdown("""
         <style>
-        .stApp { background-color: #f9f9fb; }
+        /* 全体の背景：目に優しいオフホワイト */
+        .stApp { 
+            background-color: #fcfbf9; 
+        }
+        
+        /* メインコンテナの幅調整 */
         .block-container {
             max-width: 730px !important;
             padding-bottom: 160px !important; 
         }
+        
+        /* チャット入力欄のデザイン */
         [data-testid="stChatFloatingInputContainer"] {
-            background-color: #ffffff !important;
-            border-top: 1px solid #eaeaea !important;
-            padding: 20px 0 60px 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            z-index: 99 !important;
+            background-color: transparent !important;
+            padding-bottom: 20px !important;
         }
         [data-testid="stChatInput"] {
-            max-width: 690px !important;
-            margin: 0 auto !important;
+            background-color: #ffffff !important;
             border: 1px solid #e0e0e0 !important;
-            border-radius: 8px !important;
-            background-color: #fcfcfc !important;
+            border-radius: 15px !important; /* 角を丸く */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important; /* ふんわりした影 */
         }
+        
+        /* チャットメッセージのスタイル（オプション） */
+        .stChatMessage {
+            background-color: transparent;
+        }
+
+        /* コピーライトフッター */
         .custom-copyright-footer {
             position: fixed;
-            bottom: 20px;
+            bottom: 10px;
             left: 0;
-            right: 0;
             width: 100%;
             text-align: center;
-            z-index: 100;
+            z-index: 0;
             pointer-events: none;
         }
         .copyright-text {
-            color: #888888;
+            color: #aab; /* 淡いグレーパープル */
             font-size: 10px;
             font-family: sans-serif;
-            max-width: 730px;
-            margin: 0 auto;
-            display: block;
         }
         </style>
         
@@ -57,17 +73,55 @@ if check_password():
         </div>
         """, unsafe_allow_html=True)
 
-    # --- ヘッダー ---
-    st.markdown("""
-        <div style="background-color: #ffffff; padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-bottom: 30px; max-width: 730px; margin-left: auto; margin-right: auto;">
+    # --- ヘッダー画像の読み込み ---
+    # フォルダ構成に合わせてパスを指定
+    logo_path = "image/CSI&LC IMAIのロゴ.jpg" 
+    logo_src = get_image_base64(logo_path)
+
+    # 画像が見つからない場合のプレースホルダー（念のため）
+    if not logo_src:
+        logo_html = """
+        <div style="width: 70px; height: 70px; background-color: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 20px;">
+            <span style="font-size: 10px; color: #888;">No Image</span>
+        </div>
+        """
+    else:
+        logo_html = f'<img src="{logo_src}" style="width: 80px; height: auto; margin-right: 25px; border-radius: 4px;">'
+
+    # --- ヘッダー表示エリア ---
+    st.markdown(f"""
+        <div style="
+            background-color: #ffffff; 
+            padding: 30px 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(200, 210, 220, 0.2); /* 非常に柔らかい影 */
+            margin-bottom: 40px; 
+            max-width: 730px; 
+            margin-left: auto; 
+            margin-right: auto;
+            border: 1px solid #f2f2f2;
+        ">
             <div style="display: flex; align-items: center;">
-                <div style="width: 58px; height: 58px; background-color: #061e3d; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 20px; flex-shrink: 0;">
-                    <span style="color: #ffffff; font-size: 26px; font-weight: 900; line-height: 1;">H</span>
-                    <span style="font-size: 9px; font-weight: bold; color: #ffffff; margin-top: -2px;">IMAI</span>
-                </div>
+                {logo_html}
+                
                 <div>
-                    <div style="color: #061e3d; font-size: 21px; font-weight: 700; line-height: 1.2;">今井久一郎 社会保険労務士事務所</div>
-                    <div style="color: #666666; font-size: 13.5px; margin-top: 2px;">就業規則・労務リスク判定 AIアシスタント</div>
+                    <div style="
+                        color: #2c3e50; /* 濃いグレーネイビーで視認性を確保しつつ優しく */
+                        font-size: 22px; 
+                        font-weight: 700; 
+                        line-height: 1.3; 
+                        font-family: 'Helvetica Neue', Arial, sans-serif;
+                    ">
+                        今井久一郎 社会保険労務士事務所
+                    </div>
+                    <div style="
+                        color: #7f8c8d; /* アッシュグレー */
+                        font-size: 14px; 
+                        margin-top: 5px;
+                        font-weight: 400;
+                    ">
+                        就業規則・労務リスク判定 AIアシスタント
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,9 +150,11 @@ if check_password():
 
         # AIの回答処理
         with st.chat_message("assistant"):
-            with st.status("🔍 解析・判定中...", expanded=True) as status:
+            # ステータス表示もデザインに合わせてシンプルに
+            with st.status("🍃 解析・判定中...", expanded=True) as status:
                 try:
                     D_KEY = st.secrets["DIFY_API_KEY"]
+                    
                     response = requests.post(
                         "https://api.dify.ai/v1/chat-messages",
                         headers={
@@ -114,27 +170,21 @@ if check_password():
                         timeout=120
                     )
                     
-                    # HTTPエラーのチェック
                     response.raise_for_status()
                     res_json = response.json()
-                    
-                    # 回答の抽出
                     answer = res_json.get("answer", "")
                     
                     if answer:
-                        # 正常終了
-                        status.update(label="✅ 判定完了", state="complete", expanded=False)
+                        status.update(label="✨ 判定完了", state="complete", expanded=False)
                         st.markdown(answer)
                         st.session_state.messages.append({"role": "assistant", "content": answer})
                     else:
-                        # APIは成功したが、中身がない場合
-                        status.update(label="⚠️ 回答が得られませんでした", state="error")
-                        st.error("Difyから有効な回答が返されませんでした。API設定を確認してください。")
+                        status.update(label="⚠️ 回答なし", state="error")
+                        st.error("AIからの回答が得られませんでした。")
                         
                 except Exception as e:
-                    # エラー原因を画面に表示（デバッグ用）
-                    status.update(label="❌ システムエラー", state="error")
-                    st.error(f"システムエラーが発生しました: {str(e)}")
+                    status.update(label="❌ エラー発生", state="error")
+                    st.error(f"システムエラー: {str(e)}")
 
-    # 画面下部の余白確保
+    # 画面下部の余白
     st.write("<br><br>", unsafe_allow_html=True)
