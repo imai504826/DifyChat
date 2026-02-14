@@ -2,165 +2,145 @@ import streamlit as st
 import requests
 import uuid
 import os
+import json
 from auth import check_password, logout
 
-# --- 1. ページ設定 ---
-st.set_page_config(page_title="労務リスク判定 AI", page_icon="🌿", layout="centered")
+# --- 1. 定数・設定管理 ---
+DIFY_API_URL = "https://api.dify.ai/v1/chat-messages"
+LOGO_IMAGE = "image/CSI&LC IMAIのロゴ.jpg"
 
-# --- 2. 認証チェック ---
-if check_password():
-
-    # --- CSS: デザインの最適化（優しい色合い・ソフトデザイン） ---
+def init_page_style():
+    """デザイン・CSSの初期化（モバイル対応）"""
+    st.set_page_config(page_title="労務リスク判定 AI", page_icon="🌿", layout="centered")
     st.markdown("""
         <style>
-        /* 全体の背景：目に優しいオフホワイト */
-        .stApp { 
-            background-color: #fcfbf9; 
+        .stApp { background-color: #fcfbf9; }
+        .block-container { max-width: 800px !important; padding-bottom: 120px !important; }
+        
+        /* ヘッダー全体のコンテナ */
+        .custom-header {
+            background-color: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* 両端に寄せる */
         }
         
-        /* メインコンテナの幅とパディング */
-        .block-container {
-            max-width: 800px !important;
-            padding-top: 30px !important;
-            padding-bottom: 120px !important; 
+        /* 左側（ロゴとタイトル）のグループ */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-titles {
+            display: flex;
+            flex-direction: column;
         }
 
-        /* ログアウトボタンのスタイル（角丸・優しい色） */
+        /* ログアウトボタンのスタイル */
         div.stButton > button {
-            background-color: #ffffff;
+            background-color: white;
             color: #7d8c9e;
             border: 1px solid #e0e0e0;
             border-radius: 20px;
-            font-size: 12px;
-            padding: 0.4rem 1rem;
-            transition: all 0.3s ease;
-        }
-        div.stButton > button:hover {
-            color: #d9534f; /* ホバー時は淡い赤で警告色 */
-            border-color: #d9534f;
-            background-color: #fff5f5;
+            font-size: 11px;
+            padding: 0.2rem 0.8rem;
         }
 
-        /* チャット入力欄 */
-        [data-testid="stChatInput"] {
-            border-radius: 20px !important;
-            border: 1px solid #e6e6e6 !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
+        /* モバイル用フォントサイズ調整 */
+        @media (max-width: 640px) {
+            .title-text { font-size: 16px !important; }
+            .subtitle-text { font-size: 10px !important; }
+            .header-left { gap: 10px; }
         }
 
-        /* フッター */
-        .custom-copyright-footer {
-            position: fixed;
-            bottom: 10px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            z-index: 0;
-            pointer-events: none;
-        }
-        .copyright-text {
-            color: #b0b0c0;
-            font-size: 10px;
-            font-family: sans-serif;
-        }
+        .footer { position: fixed; bottom: 10px; left: 0; width: 100%; text-align: center; color: #b0b0c0; font-size: 10px; z-index: 100; }
         </style>
-        
-        <div class="custom-copyright-footer">
-            <span class="copyright-text">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</span>
-        </div>
+        <div class="footer">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</div>
     """, unsafe_allow_html=True)
 
-    # --- ヘッダーレイアウト (st.columnsを使用) ---
-    # ヘッダー全体を囲むコンテナ（白背景・角丸・影付き）
-    with st.container():
-        st.markdown('<div style="background-color: white; padding: 20px 20px 10px 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); margin-bottom: 30px;">', unsafe_allow_html=True)
-        
-        # カラム比率: [ロゴ(1.5) : タイトル(4.5) : ボタン(1)]
-        col1, col2, col3 = st.columns([1.5, 4.5, 1.2])
+def render_header():
+    """モバイルでも崩れないヘッダーの表示"""
+    # st.columnsを使わず、HTML/CSSで構造を固定
+    logo_html = ""
+    if os.path.exists(LOGO_IMAGE):
+        import base64
+        with open(LOGO_IMAGE, "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+            logo_html = f'<img src="data:image/jpg;base64,{data}" width="50">'
+    else:
+        logo_html = '<div style="width:50px;"></div>'
 
-        # 左カラム：ロゴ画像
-        with col1:
-            logo_path = "image/CSI&LC IMAIのロゴ.jpg"
-            if os.path.exists(logo_path):
-                st.image(logo_path, width=80)
-            else:
-                st.warning("No Image")
-
-        # 中央カラム：事務所名とサブタイトル
-        with col2:
-            st.markdown("""
-                <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; padding-top: 5px;">
-                    <span style="font-size: 20px; font-weight: bold; color: #2d4059; line-height: 1.2;">今井久一郎<br>社会保険労務士事務所</span>
-                    <span style="font-size: 12px; color: #8899a6; margin-top: 5px;">就業規則・労務リスク判定 AIアシスタント</span>
+    st.markdown(f"""
+        <div class="custom-header">
+            <div class="header-left">
+                {logo_html}
+                <div class="header-titles">
+                    <span class="title-text" style="font-size: 18px; font-weight: bold; color: #2d4059; line-height: 1.2;">
+                        今井久一郎<br>社会保険労務士事務所
+                    </span>
+                    <span class="subtitle-text" style="font-size: 11px; color: #8899a6;">
+                        就業規則・労務リスク判定 AI
+                    </span>
                 </div>
-            """, unsafe_allow_html=True)
-
-        # 右カラム：ログアウトボタン
-        with col3:
-            st.write("") # 上部の余白調整
-            if st.button("ログアウト", key="logout_btn"):
-                logout()
-        
-        st.markdown('</div>', unsafe_allow_html=True) # コンテナの閉じタグ
-
-
-    # --- チャットロジック ---
+            </div>
+            <div id="logout-placeholder"></div>
+        </div>
+    """, unsafe_allow_html=True)
     
-    # セッション状態の初期化
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    if "user_id" not in st.session_state:
-        st.session_state.user_id = str(uuid.uuid4())
+    # ログアウトボタンだけはStreamlitの機能を使う必要があるため、
+    # サイドバー上部や特定の位置に配置するか、columnsでボタン専用枠を確保
+    col_empty, col_btn = st.columns([5, 1.5])
+    with col_btn:
+        if st.button("ログアウト", key="header_logout"):
+            logout()
 
-    # 過去のメッセージを表示
+def call_dify_api(query, user_id):
+    """Dify APIとの通信"""
+    try:
+        api_key = st.secrets["DIFY_API_KEY"]
+        payload = {"inputs": {}, "query": query, "response_mode": "streaming", "user": user_id}
+        response = requests.post(DIFY_API_URL, headers={"Authorization": f"Bearer {api_key}"}, json=payload, stream=True, timeout=150)
+        response.raise_for_status()
+        for line in response.iter_lines():
+            if line:
+                line_str = line.decode("utf-8")
+                if line_str.startswith("data:"): yield json.loads(line_str[5:])
+    except Exception as e:
+        st.error(f"接続エラー: {str(e)}")
+
+def main():
+    init_page_style()
+    if not check_password(): return
+
+    render_header()
+
+    if "messages" not in st.session_state: st.session_state.messages = []
+    if "user_id" not in st.session_state: st.session_state.user_id = str(uuid.uuid4())
+
     for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+        with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-    # --- チャット入力エリア ---
     if prompt := st.chat_input("就業規則の条文を入力してください..."):
-        # ユーザー入力を表示＆保存
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        with st.chat_message("user"): st.markdown(prompt)
 
-        # AIの回答処理
         with st.chat_message("assistant"):
-            # ステータス表示
-            with st.status("🌿 解析・判定中...", expanded=True) as status:
-                try:
-                    D_KEY = st.secrets["DIFY_API_KEY"]
-                    
-                    response = requests.post(
-                        "https://api.dify.ai/v1/chat-messages",
-                        headers={
-                            "Authorization": f"Bearer {D_KEY}", 
-                            "Content-Type": "application/json"
-                        },
-                        json={
-                            "inputs": {}, 
-                            "query": prompt, 
-                            "response_mode": "blocking", 
-                            "user": st.session_state.user_id
-                        },
-                        timeout=120
-                    )
-                    
-                    response.raise_for_status()
-                    res_json = response.json()
-                    answer = res_json.get("answer", "")
-                    
-                    if answer:
+            full_answer = ""
+            answer_placeholder = st.empty()
+            with st.status("🌿 解析中...", expanded=True) as status:
+                for data in call_dify_api(prompt, st.session_state.user_id):
+                    if data.get("event") == "message":
+                        full_answer += data.get("answer", "")
+                        answer_placeholder.markdown(full_answer + " ▌")
+                    elif data.get("event") == "message_end":
                         status.update(label="✨ 判定完了", state="complete", expanded=False)
-                        st.markdown(answer)
-                        st.session_state.messages.append({"role": "assistant", "content": answer})
-                    else:
-                        status.update(label="⚠️ 回答なし", state="error")
-                        st.error("AIからの回答が得られませんでした。")
-                        
-                except Exception as e:
-                    status.update(label="❌ エラー発生", state="error")
-                    st.error(f"システムエラー: {str(e)}")
+            answer_placeholder.markdown(full_answer)
+            st.session_state.messages.append({"role": "assistant", "content": full_answer})
 
-    # 画面下部の余白
-    st.write("<br><br>", unsafe_allow_html=True)
+if __name__ == "__main__":
+    main()
