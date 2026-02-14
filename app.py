@@ -3,6 +3,7 @@ import requests
 import uuid
 import os
 import json
+import base64
 from auth import check_password, logout
 
 # --- 1. 定数・設定管理 ---
@@ -10,97 +11,73 @@ DIFY_API_URL = "https://api.dify.ai/v1/chat-messages"
 LOGO_IMAGE = "image/CSI&LC IMAIのロゴ.jpg"
 
 def init_page_style():
-    """デザイン・CSSの初期化（モバイル対応）"""
+    """デザイン・CSSの初期化（モバイル最適化）"""
     st.set_page_config(page_title="労務リスク判定 AI", page_icon="🌿", layout="centered")
     st.markdown("""
         <style>
         .stApp { background-color: #fcfbf9; }
-        .block-container { max-width: 800px !important; padding-bottom: 120px !important; }
+        /* モバイルで入力欄が隠れないようパディング調整 */
+        .block-container { max-width: 800px !important; padding-bottom: 150px !important; }
         
-        /* ヘッダー全体のコンテナ */
-        .custom-header {
+        /* サイドバーのログアウトボタンを強調 */
+        section[data-testid="stSidebar"] .stButton > button {
+            width: 100%;
+            border-radius: 10px;
+            color: #d9534f;
+            border: 1px solid #ffeded;
+            background-color: #fff5f5;
+        }
+
+        /* ヘッダーの装飾 */
+        .header-box {
             background-color: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* 両端に寄せる */
-        }
-        
-        /* 左側（ロゴとタイトル）のグループ */
-        .header-left {
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
-        .header-titles {
-            display: flex;
-            flex-direction: column;
-        }
 
-        /* ログアウトボタンのスタイル */
-        div.stButton > button {
-            background-color: white;
-            color: #7d8c9e;
-            border: 1px solid #e0e0e0;
-            border-radius: 20px;
-            font-size: 11px;
-            padding: 0.2rem 0.8rem;
-        }
-
-        /* モバイル用フォントサイズ調整 */
-        @media (max-width: 640px) {
-            .title-text { font-size: 16px !important; }
-            .subtitle-text { font-size: 10px !important; }
-            .header-left { gap: 10px; }
-        }
-
-        .footer { position: fixed; bottom: 10px; left: 0; width: 100%; text-align: center; color: #b0b0c0; font-size: 10px; z-index: 100; }
+        .footer { position: fixed; bottom: 10px; left: 0; width: 100%; text-align: center; color: #b0b0c0; font-size: 10px; z-index: 0; }
         </style>
         <div class="footer">© 2026 IMAI HISAICHIRO Certified Social Insurance and Labor Consultant Office</div>
     """, unsafe_allow_html=True)
 
+def render_sidebar():
+    """サイドバーに操作系を集約（スマホで押しやすい）"""
+    with st.sidebar:
+        st.markdown("### ⚙️ 設定")
+        if st.button("ログアウト", key="sidebar_logout"):
+            logout()
+        st.divider()
+        st.caption("Ver 2.0 (Responsive)")
+
 def render_header():
-    """モバイルでも崩れないヘッダーの表示"""
-    # st.columnsを使わず、HTML/CSSで構造を固定
+    """ヘッダー：タイトルとロゴに専念（ボタンを排除してスッキリ）"""
     logo_html = ""
     if os.path.exists(LOGO_IMAGE):
-        import base64
         with open(LOGO_IMAGE, "rb") as f:
             data = base64.b64encode(f.read()).decode()
-            logo_html = f'<img src="data:image/jpg;base64,{data}" width="50">'
-    else:
-        logo_html = '<div style="width:50px;"></div>'
+            logo_html = f'<img src="data:image/jpg;base64,{data}" width="60" style="border-radius:8px;">'
 
     st.markdown(f"""
-        <div class="custom-header">
-            <div class="header-left">
-                {logo_html}
-                <div class="header-titles">
-                    <span class="title-text" style="font-size: 18px; font-weight: bold; color: #2d4059; line-height: 1.2;">
-                        今井久一郎<br>社会保険労務士事務所
-                    </span>
-                    <span class="subtitle-text" style="font-size: 11px; color: #8899a6;">
-                        就業規則・労務リスク判定 AI
-                    </span>
+        <div class="header-box">
+            {logo_html}
+            <div>
+                <div style="font-size: 18px; font-weight: bold; color: #2d4059; line-height: 1.2;">
+                    今井久一郎<br>社会保険労務士事務所
+                </div>
+                <div style="font-size: 11px; color: #8899a6; margin-top: 4px;">
+                    就業規則・労務リスク判定 AIアシスタント
                 </div>
             </div>
-            <div id="logout-placeholder"></div>
         </div>
     """, unsafe_allow_html=True)
-    
-    # ログアウトボタンだけはStreamlitの機能を使う必要があるため、
-    # サイドバー上部や特定の位置に配置するか、columnsでボタン専用枠を確保
-    col_empty, col_btn = st.columns([5, 1.5])
-    with col_btn:
-        if st.button("ログアウト", key="header_logout"):
-            logout()
 
+# --- 2. 通信・メイン処理 ---
 def call_dify_api(query, user_id):
-    """Dify APIとの通信"""
     try:
         api_key = st.secrets["DIFY_API_KEY"]
         payload = {"inputs": {}, "query": query, "response_mode": "streaming", "user": user_id}
@@ -117,7 +94,8 @@ def main():
     init_page_style()
     if not check_password(): return
 
-    render_header()
+    render_sidebar() # サイドバーにログアウトを配置
+    render_header()  # ヘッダーは表示のみ
 
     if "messages" not in st.session_state: st.session_state.messages = []
     if "user_id" not in st.session_state: st.session_state.user_id = str(uuid.uuid4())
